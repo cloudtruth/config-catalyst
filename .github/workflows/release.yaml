@@ -32,7 +32,7 @@ jobs:
         run: |
           export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
           echo "${BUILD_TAG}" > VERSION
-          docker build -t ${DOCKER_TAG} -f Dockerfile dynamic_importer
+          docker build -t ${DOCKER_TAG} -f Dockerfile .
 
       - uses: azure/docker-login@v1
         with:
