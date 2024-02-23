@@ -12,7 +12,6 @@ on:
 env:
   BUILD_TAG: ${{ github.event.release.tag_name }}
   DOCKER_REPO: cloudtruth/dynamic-importer
-  PYTHON_VERSION: 3.11
 
 permissions:
   contents: read    # required for actions/checkout
