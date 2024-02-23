@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudtruth-dynamic-importer"
+version = "0.1.0"
+dependencies = [
+    "click",
+    "python-dotenv @ git+https://github.com/cloudtruth/python-dotenv@feature/dump-dotenv",
+    "python-hcl2",
+    "pyyaml",
+    "requests",
+]
+requires-python = ">=3.10"
+
+[project.scripts]
+cloudtruth-dynamic-importer = "dynamic_importer.main:import_config"
+
+[tool.setuptools]
+packages = ["dynamic_importer"]
