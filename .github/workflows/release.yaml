@@ -1,0 +1,47 @@
+#
+# Copyright (C) 2024 CloudTruth, Inc.
+# All Rights Reserved
+#
+---
+name: release
+on:
+  release:
+    types:
+      - published
+
+env:
+  BUILD_TAG: ${{ github.event.release.tag_name }}
+  DOCKER_REPO: cloudtruth/dynamic-importer
+  PYTHON_VERSION: 3.11
+
+permissions:
+  contents: read    # required for actions/checkout
+
+jobs:
+  build-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Dump github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "${GITHUB_CONTEXT}"
+
+      - uses: actions/checkout@v3
+
+      - name: Build image
+        run: |
+          export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
+          echo "${BUILD_TAG}" > VERSION
+          docker build --target=prod -t ${DOCKER_TAG} -f Dockerfile dynamic_importer
+
+      - uses: azure/docker-login@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish image to docker hub
+        run: |
+          export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
+          docker tag ${DOCKER_TAG} ${DOCKER_TAG}
+          docker push ${DOCKER_TAG}
