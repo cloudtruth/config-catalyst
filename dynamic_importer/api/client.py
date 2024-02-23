@@ -4,7 +4,7 @@ import requests
 from collections import defaultdict
 
 DEFAULT_API_HOST = "api.cloudtruth.io"
-#DEFAULT_API_HOST = "localhost:8000"
+# DEFAULT_API_HOST = "localhost:8000"
 SUCCESS_CODES = {"get": 200, "post": 201, "patch": 200, "put": 200, "delete": 204}
 
 

@@ -21,9 +21,7 @@ class JSONProcessor(BaseProcessor):
         for _, data in config_data.items():
             if data["type"] != "string":
                 # JSON strings use double quotes
-                reference = (
-                    f'"(\\{{\\{{\s+cloudtruth.parameters.{data["param_name"]}\\s+\\}}\\}})"'
-                )
+                reference = f'"(\\{{\\{{\s+cloudtruth.parameters.{data["param_name"]}\\s+\\}}\\}})"'
                 template_body = sub(compile(reference), r"\1", template_body)
 
         return template_body
