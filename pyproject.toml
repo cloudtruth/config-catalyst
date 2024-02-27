@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cloudtruth-dynamic-importer"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
     "click",
     "python-dotenv @ git+https://github.com/cloudtruth/python-dotenv@feature/dump-dotenv",
