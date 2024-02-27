@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 import os
+from collections import defaultdict
+from typing import Dict
+from typing import Optional
 
 import requests
-from collections import defaultdict
+
+from dynamic_importer.api.exceptions import ResourceNotFoundError
 
 DEFAULT_API_HOST = "api.cloudtruth.io"
 # DEFAULT_API_HOST = "localhost:8000"
@@ -19,8 +25,12 @@ class CTClient:
         self.cache = defaultdict(dict)
 
     def _make_request(
-        self, path: str, method: str, data: dict = None, params: dict = None
-    ):
+        self,
+        path: str,
+        method: str,
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+    ) -> Dict:
         if not path.startswith("/"):
             path = f"/{path}"
         if not path.endswith("/"):
@@ -41,7 +51,7 @@ class CTClient:
 
         return resp.json()
 
-    def get_project_id(self, project_str: str):
+    def get_project_id(self, project_str: str) -> str:
         if project_str in self.cache["projects"].keys():
             return self.cache["projects"][project_str]["id"]
         projects = self._make_request("projects", "GET")
@@ -54,9 +64,9 @@ class CTClient:
         try:
             return self.cache["projects"][project_str]["id"]
         except KeyError:
-            raise ValueError(f"Project {project_str} not found")
+            raise ResourceNotFoundError(f"Project {project_str} not found")
 
-    def _populate_environment_cache(self):
+    def _populate_environment_cache(self) -> None:
         environments = self._make_request("environments", "GET")
         for environment in environments["results"]:
             self.cache["environments"][environment["name"]] = {
@@ -64,7 +74,7 @@ class CTClient:
                 "id": environment["id"],
             }
 
-    def get_environment_id(self, environment_str: str):
+    def get_environment_id(self, environment_str: str) -> str:
         if environment_str in self.cache["environments"].keys():
             return self.cache["environments"][environment_str]["id"]
         self._populate_environment_cache()
@@ -72,9 +82,9 @@ class CTClient:
         try:
             return self.cache["environments"][environment_str]["id"]
         except KeyError:
-            raise ValueError(f"Environment {environment_str} not found")
+            raise ResourceNotFoundError(f"Environment {environment_str} not found")
 
-    def get_environment_url(self, environment_str: str):
+    def get_environment_url(self, environment_str: str) -> str:
         if environment_str in self.cache["environments"].keys():
             return self.cache["environments"][environment_str]["id"]
         self._populate_environment_cache()
@@ -82,9 +92,9 @@ class CTClient:
         try:
             return self.cache["environments"][environment_str]["id"]
         except KeyError:
-            raise ValueError(f"Environment {environment_str} not found")
+            raise ResourceNotFoundError(f"Environment {environment_str} not found")
 
-    def get_parameter_id(self, project_str: str, parameter_str: str):
+    def get_parameter_id(self, project_str: str, parameter_str: str) -> str:
         if f"{project_str}/{parameter_str}" in self.cache["parameters"].keys():
             return self.cache["parameters"][f"{project_str}/{parameter_str}"]["id"]
         project_id = self.get_project_id(project_str)
@@ -97,9 +107,9 @@ class CTClient:
         try:
             return self.cache["parameters"][f"{project_str}/{parameter_str}"]["id"]
         except KeyError:
-            raise ValueError(f"Parameter {parameter_str} not found")
+            raise ResourceNotFoundError(f"Parameter {parameter_str} not found")
 
-    def _populate_type_cache(self):
+    def _populate_type_cache(self) -> None:
         types = self._make_request("types", "GET")
         for ct_type in types["results"]:
             self.cache["types"][ct_type["name"]] = {
@@ -107,7 +117,7 @@ class CTClient:
                 "id": ct_type["id"],
             }
 
-    def get_type_id(self, type_str: str):
+    def get_type_id(self, type_str: str) -> str:
         if type_str in self.cache["types"].keys():
             return self.cache["types"][type_str]["id"]
         self._populate_type_cache()
@@ -116,7 +126,7 @@ class CTClient:
         except KeyError:
             raise ValueError(f"Type {type_str} not found")
 
-    def get_type_url(self, type_str: str):
+    def get_type_url(self, type_str: str) -> str:
         if type_str in self.cache["types"].keys():
             return self.cache["types"][type_str]["url"]
         self._populate_type_cache()
@@ -125,12 +135,12 @@ class CTClient:
         except KeyError:
             raise ValueError(f"Type {type_str} not found")
 
-    def create_project(self, name: str, description: str = ""):
+    def create_project(self, name: str, description: str = "") -> Dict:
         return self._make_request(
             "projects", "POST", data={"name": name, "description": description}
         )
 
-    def create_environment(self, name: str, description: str = ""):
+    def create_environment(self, name: str, description: str = "") -> Dict:
         return self._make_request(
             "environments", "POST", data={"name": name, "description": description}
         )
@@ -142,8 +152,14 @@ class CTClient:
         description: str = "",
         type_str: str = "string",
         secret: bool = False,
-    ):
-        project_id = self.get_project_id(project_str)
+        create_dependencies: bool = False,
+    ) -> Dict:
+        try:
+            project_id = self.get_project_id(project_str)
+        except ResourceNotFoundError:
+            if not create_dependencies:
+                raise
+            project_id = self.create_project(project_str)["id"]
         return self._make_request(
             f"projects/{project_id}/parameters",
             "POST",
@@ -156,9 +172,19 @@ class CTClient:
         )
 
     def create_template(
-        self, project_str: str, name: str, body: str, description: str = ""
-    ):
-        project_id = self.get_project_id(project_str)
+        self,
+        project_str: str,
+        name: str,
+        body: str,
+        description: str = "",
+        create_dependencies: bool = False,
+    ) -> Dict:
+        try:
+            project_id = self.get_project_id(project_str)
+        except ResourceNotFoundError:
+            if not create_dependencies:
+                raise
+            project_id = self.create_project(project_str)["id"]
         return self._make_request(
             f"projects/{project_id}/templates",
             "POST",
@@ -166,11 +192,24 @@ class CTClient:
         )
 
     def create_value(
-        self, project_str: str, parameter_str: str, environment_str: str, value: str
-    ):
-        project_id = self.get_project_id(project_str)
-        parameter_id = self.get_parameter_id(project_str, parameter_str)
-        environment_id = self.get_environment_id(environment_str)
+        self,
+        project_str: str,
+        parameter_str: str,
+        environment_str: str,
+        value: str,
+        create_dependencies: bool = False,
+    ) -> Dict:
+        try:
+            project_id = self.get_project_id(project_str)
+            environment_id = self.get_environment_id(environment_str)
+            parameter_id = self.get_parameter_id(project_str, parameter_str)
+        except ResourceNotFoundError:
+            if not create_dependencies:
+                raise
+            project_id = self.create_project(project_str)["id"]
+            environment_id = self.create_environment(environment_str)["id"]
+            parameter_id = self.create_parameter(project_str, parameter_str)["id"]
+
         value = str(value) if isinstance(value, bool) else value
         return self._make_request(
             f"projects/{project_id}/parameters/{parameter_id}/values",

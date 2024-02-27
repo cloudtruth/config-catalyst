@@ -1,9 +1,13 @@
-import importlib
-import pkgutil
-import os
+from __future__ import annotations
 
+import importlib
+import os
+import pkgutil
 from copy import deepcopy
-from typing import Optional, Dict
+from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import Tuple
 
 
 def get_processor_class(file_type):
@@ -30,8 +34,9 @@ def get_supported_formats():
 class BaseProcessor:
     parameters_and_values = None
     parameters = None
+    raw_data: Dict = {}
     values = None
-    template = None
+    template: Dict = {}
 
     def __init__(self, file_path):
         raise NotImplementedError("Subclasses must implement the __init__ method")
@@ -61,7 +66,9 @@ class BaseProcessor:
             "", self.template, hints=hints
         )
 
-    def encode_template_references(self, template: dict, config_data: dict) -> str:
+    def encode_template_references(
+        self, template: Dict, config_data: Optional[Dict]
+    ) -> str:
         raise NotImplementedError(
             "Subclasses must implement the encode_template_references method"
         )
@@ -70,7 +77,9 @@ class BaseProcessor:
         hints = hints or self.parameters_and_values
         return self.encode_template_references(self.template, hints)
 
-    def _traverse_data(self, path, obj, hints: Optional[Dict] = None) -> dict:
+    def _traverse_data(
+        self, path, obj, hints: Optional[Dict] = None
+    ) -> Tuple[Any, Dict]:
         """
         Traverse obj recursively and construct every path / value pair.
 
