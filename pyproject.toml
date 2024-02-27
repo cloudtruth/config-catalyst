@@ -12,14 +12,15 @@ dependencies = [
     "pyyaml",
     "requests",
 ]
-dev-dependencies = [
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
     "pre-commit",
     "mypy",
     "pytest",
     "pytest-cov",
 ]
-requires-python = ">=3.10"
-
 [project.scripts]
 cloudtruth-dynamic-importer = "dynamic_importer.main:import_config"
 

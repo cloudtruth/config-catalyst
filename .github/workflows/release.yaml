@@ -17,7 +17,7 @@ permissions:
   contents: read    # required for actions/checkout
 
 jobs:
-  build-amd64-container:
+  build-containers:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -35,54 +35,22 @@ jobs:
           project: "deploy"
           environment: "production"
 
-      - name: Build image
-        run: |
-          export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
-          echo "${BUILD_TAG}" > VERSION
-          docker build -t ${DOCKER_TAG} -f Dockerfile .
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64,arm'
 
-      - uses: azure/docker-login@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_PASSWORD }}
 
-      - name: Publish image to docker hub
-        run: |
-          export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
-          docker tag ${DOCKER_TAG} ${DOCKER_TAG}
-          docker push ${DOCKER_TAG}
-
-  build-arm64-container:
-    runs-on: macos-latest
-    timeout-minutes: 20
-    steps:
-      - name: Dump github context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "${GITHUB_CONTEXT}"
-
-      - uses: actions/checkout@v3
-
-      - name: Set docker login environment from cloudtruth
-        uses: cloudtruth/configure-action@v2
+      - name: Build and push
+        uses: docker/build-push-action@v3
         with:
-          apikey: "${{ secrets.CLOUDTRUTH_API_KEY }}"
-          project: "deploy"
-          environment: "production"
-
-      - name: Build image
-        run: |
-          export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
-          echo "${BUILD_TAG}" > VERSION
-          docker build -t ${DOCKER_TAG} -f Dockerfile .
-
-      - uses: azure/docker-login@v1
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_PASSWORD }}
-
-      - name: Publish image to docker hub
-        run: |
-          export DOCKER_TAG=$(echo "${DOCKER_REPO}:${BUILD_TAG}")
-          docker tag ${DOCKER_TAG} ${DOCKER_TAG}
-          docker push ${DOCKER_TAG}
+          push: true
+          tags: ${{ env.DOCKER_REPO }}:${{ env.BUILD_TAG }}
