@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import json
 import os
-import urllib3
 
 import click
+import urllib3
+
 from dynamic_importer.api.client import CTClient
 from dynamic_importer.processors import get_processor_class
 from dynamic_importer.processors import get_supported_formats
@@ -61,7 +64,11 @@ def process_file(input_file, file_type, output_dir):
 )
 @click.option("-p", "--project", help="CloudTruth project to import data into")
 @click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
-def create_data(data_file, template_file, project, k):
+@click.option("-c", help="Create missing projects and enviroments", is_flag=True)
+@click.option("-u", help="Upsert values", is_flag=True)
+def create_data(
+    data_file, template_file, project, k, create_dependencies, upsert_values
+):
     api_key = os.environ.get("CLOUDTRUTH_API_KEY") or click.prompt(
         "Enter your CloudTruth API Key", hide_input=True
     )
@@ -76,9 +83,16 @@ def create_data(data_file, template_file, project, k):
                 name=config_data["param_name"],
                 type_str=config_data["type"],
                 secret=config_data["secret"],
+                create_dependencies=create_dependencies,
             )
             for env, value in config_data["values"].items():
-                client.create_value(project, config_data["param_name"], env, value)
+                client.create_value(
+                    project,
+                    config_data["param_name"],
+                    env,
+                    value,
+                    create_dependencies=create_dependencies,
+                )
     with open(template_file, "r") as fp:
         template = fp.read()
         client.create_template(project, name=template_file, body=template)
