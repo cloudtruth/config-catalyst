@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 from re import sub
 from typing import Dict
 from typing import Optional
 
 import hcl2
+
 from dynamic_importer.processors import BaseProcessor
 
 
 class TFVarsProcessor(BaseProcessor):
-    def __init__(self, file_path):
+    def __init__(self, default_values: str, file_path: str) -> None:
+        super().__init__(default_values, file_path)
         try:
             with open(file_path, "r") as fp:
                 # hcl2 does not support dumping to a string/file,
@@ -19,12 +23,15 @@ class TFVarsProcessor(BaseProcessor):
         except Exception as e:
             raise ValueError(f"Attempt to decode {file_path} as HCL failed: {str(e)}")
 
-    def encode_template_references(self, template: dict, config_data: dict) -> str:
+    def encode_template_references(
+        self, template: Dict, config_data: Optional[Dict]
+    ) -> str:
         template_body = self.raw_file
         environment = "default"
-        for _, data in config_data.items():
-            value = data["values"][environment]
-            reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
-            template_body = sub(value, reference, template_body)
+        if config_data:
+            for _, data in config_data.items():
+                value = data["values"][environment]
+                reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
+                template_body = sub(value, reference, template_body)
 
         return template_body

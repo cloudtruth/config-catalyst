@@ -1,15 +1,21 @@
+from __future__ import annotations
+
 from re import sub
+from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Tuple
 
 import hcl2
+
 from dynamic_importer.processors import BaseProcessor
 
 
 class TFProcessor(BaseProcessor):
     data_keys = {"type", "default"}
 
-    def __init__(self, file_path):
+    def __init__(self, default_values: str, file_path: str) -> None:
+        super().__init__(default_values, file_path)
         try:
             with open(file_path, "r") as fp:
                 # hcl2 does not support dumping to a string/file,
@@ -20,20 +26,23 @@ class TFProcessor(BaseProcessor):
         except Exception as e:
             raise ValueError(f"Attempt to decode {file_path} as HCL failed: {str(e)}")
 
-    def encode_template_references(self, template: dict, config_data: dict) -> str:
+    def encode_template_references(
+        self, template: Dict, config_data: Optional[Dict]
+    ) -> str:
         template_body = self.raw_file
         environment = "default"
-        for _, data in config_data.items():
-            value = data["values"][environment]
-            reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
-            template_body = sub(value, reference, template_body)
+        if config_data:
+            for _, data in config_data.items():
+                value = data["values"][environment]
+                reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
+                template_body = sub(value, reference, template_body)
 
         return template_body
 
     # TODO: override self._traverse_data to only process 'default' from raw_data
     def _traverse_data(
         self, path: str, obj: Dict, hints: Optional[Dict] = None
-    ) -> dict:
+    ) -> Tuple[Any, Dict]:
         """
         Traverse obj recursively and construct every path / value pair.
 

@@ -86,11 +86,11 @@ class CTClient:
 
     def get_environment_url(self, environment_str: str) -> str:
         if environment_str in self.cache["environments"].keys():
-            return self.cache["environments"][environment_str]["id"]
+            return self.cache["environments"][environment_str]["url"]
         self._populate_environment_cache()
 
         try:
-            return self.cache["environments"][environment_str]["id"]
+            return self.cache["environments"][environment_str]["url"]
         except KeyError:
             raise ResourceNotFoundError(f"Environment {environment_str} not found")
 

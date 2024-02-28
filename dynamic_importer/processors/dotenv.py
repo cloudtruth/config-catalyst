@@ -11,7 +11,8 @@ from dynamic_importer.processors import BaseProcessor
 
 
 class DotEnvProcessor(BaseProcessor):
-    def __init__(self, file_path):
+    def __init__(self, default_values: str, file_path: str) -> None:
+        super().__init__(default_values, file_path)
         self.raw_data = dotenv_values(file_path)
 
     def encode_template_references(

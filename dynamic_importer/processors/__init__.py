@@ -32,14 +32,26 @@ def get_supported_formats():
 
 
 class BaseProcessor:
+    default_values = None
+    dirs_to_ignore = [
+        ".git",
+        ".github",
+        ".vscode",
+        "__pycache__",
+        "venv",
+        "node_modules",
+        "dist",
+        "build",
+        "target",
+    ]
     parameters_and_values = None
     parameters = None
     raw_data: Dict = {}
     values = None
     template: Dict = {}
 
-    def __init__(self, file_path):
-        raise NotImplementedError("Subclasses must implement the __init__ method")
+    def __init__(self, default_values: str, file_path: str) -> None:
+        self.default_values = default_values
 
     def guess_type(self, value):
         """
@@ -61,10 +73,14 @@ class BaseProcessor:
         return self.template, self.parameters_and_values
 
     def extract_parameters_and_values(self, hints: Optional[Dict] = None) -> None:
-        self.template = deepcopy(self.raw_data)
-        _, self.parameters_and_values = self._traverse_data(
-            "", self.template, hints=hints
-        )
+        if self.default_values:
+            self.template = deepcopy(self.raw_data["default"])
+
+            _, self.parameters_and_values = self._traverse_data(
+                "", self.template, hints=hints
+            )
+
+    # TODO: traverse the rest of the files
 
     def encode_template_references(
         self, template: Dict, config_data: Optional[Dict]

@@ -17,11 +17,21 @@ def import_config():
 
 
 @import_config.command()
-@click.option("-i", "--input-file", help="Full path to the file to be imported")
+@click.option(
+    "-i",
+    "--input-files",
+    help="Full path to the file(s) to be imported. Can be a single file or a directory of files.",
+)
 @click.option(
     "-t",
     "--file-type",
     help=f"Type of file to process. Must be one of: {get_supported_formats()}",
+)
+@click.option(
+    "--default-values",
+    help="Full path to a file containing default values for the config data",
+    default=None,
+    required=False,
 )
 @click.option(
     "-o",
@@ -30,12 +40,22 @@ def import_config():
     default=".",
     required=False,
 )
-def process_file(input_file, file_type, output_dir):
-    click.echo(f"Processing file: {input_file}")
-    input_filename = ".".join(input_file.split("/")[-1].split(".")[:-1])
+@click.option(
+    "--walk-subdirs",
+    help="Enables walking subdirectories when processing a directory of files",
+    is_flag=True,
+)
+def process_configs(input_files, file_type, default_values, output_dir, walk_subdirs):
+    input_files = input_files.rstrip("/")
+    if default_values:
+        click.echo(f"Using default values from: {default_values}")
+    click.echo(f"Processing {file_type} files from: {input_files}")
+    input_filename = input_files.split("/")[-1]
+    if os.path.isfile(input_files):
+        input_filename = ".".join(input_files.split("/")[-1].split(".")[:-1])
 
     processing_class = get_processor_class(file_type)
-    processor = processing_class(input_file)
+    processor = processing_class(default_values, input_files)
     template, config_data = processor.process()
 
     template_out_file = f"{output_dir}/{input_filename}.cttemplate"
