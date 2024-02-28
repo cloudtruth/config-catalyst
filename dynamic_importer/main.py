@@ -66,9 +66,7 @@ def process_file(input_file, file_type, output_dir):
 @click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
 @click.option("-c", help="Create missing projects and enviroments", is_flag=True)
 @click.option("-u", help="Upsert values", is_flag=True)
-def create_data(
-    data_file, template_file, project, k, create_dependencies, upsert_values
-):
+def create_data(data_file, template_file, project, k, c, u):
     api_key = os.environ.get("CLOUDTRUTH_API_KEY") or click.prompt(
         "Enter your CloudTruth API Key", hide_input=True
     )
@@ -83,7 +81,7 @@ def create_data(
                 name=config_data["param_name"],
                 type_str=config_data["type"],
                 secret=config_data["secret"],
-                create_dependencies=create_dependencies,
+                create_dependencies=c,
             )
             for env, value in config_data["values"].items():
                 client.create_value(
@@ -91,7 +89,7 @@ def create_data(
                     config_data["param_name"],
                     env,
                     value,
-                    create_dependencies=create_dependencies,
+                    create_dependencies=c,
                 )
     with open(template_file, "r") as fp:
         template = fp.read()
