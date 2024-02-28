@@ -54,4 +54,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.DOCKER_REPO }}:${{ env.BUILD_TAG }}
+          tags: ${{ env.DOCKER_REPO }}:${{ env.BUILD_TAG }}, ${{ env.DOCKER_REPO }}:latest
