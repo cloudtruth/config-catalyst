@@ -1,39 +1,55 @@
+from __future__ import annotations
+
 from re import sub
+from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import hcl2
+
 from dynamic_importer.processors import BaseProcessor
 
 
 class TFProcessor(BaseProcessor):
     data_keys = {"type", "default"}
 
-    def __init__(self, file_path):
-        try:
-            with open(file_path, "r") as fp:
-                # hcl2 does not support dumping to a string/file,
-                # so we need to store the raw file for template generation
-                self.raw_file = fp.read()
-                fp.seek(0)
-                self.raw_data: Dict = hcl2.load(fp)
-        except Exception as e:
-            raise ValueError(f"Attempt to decode {file_path} as HCL failed: {str(e)}")
+    def __init__(self, env_values: Dict) -> None:
+        for env, file_path in env_values.items():
+            try:
+                with open(file_path, "r") as fp:
+                    # hcl2 does not support dumping to a string/file,
+                    # so we need to store the raw file for template generation
+                    self.raw_file = fp.read()
+                    fp.seek(0)
+                    self.raw_data[env] = hcl2.load(fp)
+            except Exception as e:
+                raise ValueError(
+                    f"Attempt to decode {file_path} as HCL failed: {str(e)}"
+                )
 
-    def encode_template_references(self, template: dict, config_data: dict) -> str:
+    def encode_template_references(
+        self, template: Dict, config_data: Optional[Dict]
+    ) -> str:
         template_body = self.raw_file
         environment = "default"
-        for _, data in config_data.items():
-            value = data["values"][environment]
-            reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
-            template_body = sub(value, reference, template_body)
+        if config_data:
+            for _, data in config_data.items():
+                value = data["values"][environment]
+                reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
+                template_body = sub(value, reference, template_body)
 
         return template_body
 
-    # TODO: override self._traverse_data to only process 'default' from raw_data
     def _traverse_data(
-        self, path: str, obj: Dict, hints: Optional[Dict] = None
-    ) -> dict:
+        self,
+        path: str,
+        obj: Union[Dict, List, str],
+        env: Optional[str] = "default",
+        hints: Optional[Dict] = None,
+    ) -> Tuple[Any, Dict]:
         """
         Traverse obj recursively and construct every path / value pair.
 
@@ -43,7 +59,7 @@ class TFProcessor(BaseProcessor):
         if isinstance(obj, list):
             for i, subnode in enumerate(obj):
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{i}]", subnode, hints=hints
+                    path + f"[{i}]", subnode, env, hints=hints
                 )
                 obj[i] = template_value
                 params_and_values.update(ct_data)
@@ -54,7 +70,7 @@ class TFProcessor(BaseProcessor):
                     param_name = self.path_to_param_name(path)
                     return f"{{{{ cloudtruth.parameters.{param_name} }}}}", {
                         path: {
-                            "values": {"default": obj["default"]},
+                            "values": {env: obj["default"]},
                             "param_name": param_name,
                             "description": obj.get("description", ""),
                             "type": obj["type"],
@@ -71,7 +87,7 @@ class TFProcessor(BaseProcessor):
 
             for k, v in obj.items():
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{k}]", v, hints=hints
+                    path + f"[{k}]", v, env, hints=hints
                 )
                 obj[k] = template_value
                 params_and_values.update(ct_data)
@@ -82,7 +98,7 @@ class TFProcessor(BaseProcessor):
                 param_name = self.path_to_param_name(path)
                 return f"{{{{ cloudtruth.parameters.{param_name} }}}}", {
                     path: {
-                        "values": {"default": obj},
+                        "values": {env: obj},
                         "param_name": param_name,
                         "type": obj_type,
                         "secret": False,

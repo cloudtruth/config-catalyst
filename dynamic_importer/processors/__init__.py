@@ -6,11 +6,13 @@ import pkgutil
 from copy import deepcopy
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 
-def get_processor_class(file_type):
+def get_processor_class(file_type: str) -> BaseProcessor:
     ft_lower = file_type.lower()
     if processor_module := importlib.import_module(
         f"dynamic_importer.processors.{ft_lower}"
@@ -22,7 +24,7 @@ def get_processor_class(file_type):
     raise ValueError(f"No processor found for file type: {file_type}")
 
 
-def get_supported_formats():
+def get_supported_formats() -> List[str]:
     for module_loader, name, ispkg in pkgutil.iter_modules([os.path.dirname(__file__)]):
         importlib.import_module("." + name, __package__)
     return [
@@ -32,13 +34,25 @@ def get_supported_formats():
 
 
 class BaseProcessor:
-    parameters_and_values = None
+    default_values = None
+    dirs_to_ignore = [
+        ".git",
+        ".github",
+        ".vscode",
+        "__pycache__",
+        "venv",
+        "node_modules",
+        "dist",
+        "build",
+        "target",
+    ]
+    parameters_and_values: Dict = {}
     parameters = None
     raw_data: Dict = {}
     values = None
     template: Dict = {}
 
-    def __init__(self, file_path):
+    def __init__(self, env_values: Dict):
         raise NotImplementedError("Subclasses must implement the __init__ method")
 
     def guess_type(self, value):
@@ -61,10 +75,20 @@ class BaseProcessor:
         return self.template, self.parameters_and_values
 
     def extract_parameters_and_values(self, hints: Optional[Dict] = None) -> None:
-        self.template = deepcopy(self.raw_data)
-        _, self.parameters_and_values = self._traverse_data(
-            "", self.template, hints=hints
-        )
+        self.template = deepcopy(self.raw_data["default"])
+        for env, data in self.raw_data.items():
+            template, environment_values = self._traverse_data(
+                "", data, env, hints=hints
+            )
+            self.template.update(template)
+
+            for path, config_data in environment_values.items():
+                if path not in self.parameters_and_values.keys():
+                    self.parameters_and_values[path] = config_data
+                else:
+                    self.parameters_and_values[path]["values"].update(
+                        config_data["values"]
+                    )
 
     def encode_template_references(
         self, template: Dict, config_data: Optional[Dict]
@@ -78,7 +102,11 @@ class BaseProcessor:
         return self.encode_template_references(self.template, hints)
 
     def _traverse_data(
-        self, path, obj, hints: Optional[Dict] = None
+        self,
+        path: str,
+        obj: Union[List, Dict, str],
+        env: Optional[str] = "default",
+        hints: Optional[Dict] = None,
     ) -> Tuple[Any, Dict]:
         """
         Traverse obj recursively and construct every path / value pair.
@@ -89,7 +117,7 @@ class BaseProcessor:
         if isinstance(obj, list):
             for i, subnode in enumerate(obj):
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{i}]", subnode, hints=hints
+                    path + f"[{i}]", subnode, env, hints=hints
                 )
                 obj[i] = template_value
                 params_and_values.update(ct_data)
@@ -97,7 +125,7 @@ class BaseProcessor:
         elif isinstance(obj, dict):
             for k, v in obj.items():
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{k}]", v, hints=hints
+                    path + f"[{k}]", v, env, hints=hints
                 )
                 obj[k] = template_value
                 params_and_values.update(ct_data)
@@ -108,7 +136,7 @@ class BaseProcessor:
                 param_name = self.path_to_param_name(path)
                 return f"{{{{ cloudtruth.parameters.{param_name} }}}}", {
                     path: {
-                        "values": {"default": obj},
+                        "values": {env: obj},
                         "param_name": param_name,
                         "type": obj_type,
                         "secret": False,
