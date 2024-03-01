@@ -84,53 +84,6 @@ def process_configs(file_type, default_values, env_values, output_dir):
 
 @import_config.command()
 @click.option(
-    "-d",
-    "--data-file",
-    help="Full path to config data file generated from process_configs command",
-)
-@click.option(
-    "-m",
-    "--template-file",
-    help="Full path to template file generated from process_configs command",
-)
-@click.option("-p", "--project", help="CloudTruth project to import data into")
-@click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
-@click.option("-c", help="Create missing projects and enviroments", is_flag=True)
-@click.option("-u", help="Upsert values", is_flag=True)
-def create_data(
-    data_file, template_file, project, k, create_dependencies, upsert_values
-):
-    api_key = os.environ.get("CLOUDTRUTH_API_KEY") or click.prompt(
-        "Enter your CloudTruth API Key", hide_input=True
-    )
-    if k:
-        urllib3.disable_warnings()
-    client = CTClient(api_key, skip_ssl_validation=k)
-    with open(data_file, "r") as fp:
-        config_data = json.load(fp)
-        for raw_key, config_data in config_data.items():
-            client.create_parameter(
-                project,
-                name=config_data["param_name"],
-                type_str=config_data["type"],
-                secret=config_data["secret"],
-                create_dependencies=create_dependencies,
-            )
-            for env, value in config_data["values"].items():
-                client.create_value(
-                    project,
-                    config_data["param_name"],
-                    env,
-                    value,
-                    create_dependencies=create_dependencies,
-                )
-    with open(template_file, "r") as fp:
-        template = fp.read()
-        client.create_template(project, name=template_file, body=template)
-
-
-@import_config.command()
-@click.option(
     "--default-values",
     help="Full path to a file containing default values for the config data",
     default=None,
@@ -188,6 +141,56 @@ def regenerate_template(default_values, env_values, file_type, data_file):
     with open(template_out_file, "w+") as fp:
         template_body = processor.generate_template(config_data)
         fp.write(template_body)
+
+
+@import_config.command()
+@click.option(
+    "-d",
+    "--data-file",
+    help="Full path to config data file generated from process_configs command",
+    required=True,
+)
+@click.option(
+    "-m",
+    "--template-file",
+    help="Full path to template file generated from process_configs command",
+    required=True,
+)
+@click.option(
+    "-p", "--project", help="CloudTruth project to import data into", required=True
+)
+@click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
+@click.option("-c", help="Create missing projects and enviroments", is_flag=True)
+@click.option("-u", help="Upsert values", is_flag=True)
+def create_data(data_file, template_file, project, k, c, u):
+    api_key = os.environ.get("CLOUDTRUTH_API_KEY") or click.prompt(
+        "Enter your CloudTruth API Key", hide_input=True
+    )
+    if k:
+        urllib3.disable_warnings()
+    client = CTClient(api_key, skip_ssl_validation=k)
+    with open(data_file, "r") as fp:
+        config_data = json.load(fp)
+        click.echo(f"Creating {len(config_data.values())} parameters")
+        for raw_key, config_data in config_data.items():
+            client.upsert_parameter(
+                project,
+                name=config_data["param_name"],
+                type_name=config_data["type"],
+                secret=config_data["secret"],
+                create_dependencies=c,
+            )
+            for env, value in config_data["values"].items():
+                client.upsert_value(
+                    project,
+                    config_data["param_name"],
+                    env,
+                    value,
+                    create_dependencies=c,
+                )
+    with open(template_file, "r") as fp:
+        template = fp.read()
+        client.upsert_template(project, name=template_file, body=template)
 
 
 if __name__ == "__main__":

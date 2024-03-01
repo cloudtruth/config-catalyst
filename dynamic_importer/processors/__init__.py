@@ -83,7 +83,7 @@ class BaseProcessor:
             self.template.update(template)
 
             for path, config_data in environment_values.items():
-                if path not in self.parameters_and_values:
+                if path not in self.parameters_and_values.keys():
                     self.parameters_and_values[path] = config_data
                 else:
                     self.parameters_and_values[path]["values"].update(
@@ -117,7 +117,7 @@ class BaseProcessor:
         if isinstance(obj, list):
             for i, subnode in enumerate(obj):
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{i}]", subnode, hints=hints
+                    path + f"[{i}]", subnode, env, hints=hints
                 )
                 obj[i] = template_value
                 params_and_values.update(ct_data)
@@ -125,7 +125,7 @@ class BaseProcessor:
         elif isinstance(obj, dict):
             for k, v in obj.items():
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{k}]", v, hints=hints
+                    path + f"[{k}]", v, env, hints=hints
                 )
                 obj[k] = template_value
                 params_and_values.update(ct_data)
