@@ -10,7 +10,6 @@ import requests
 from dynamic_importer.api.exceptions import ResourceNotFoundError
 
 DEFAULT_API_HOST = "api.cloudtruth.io"
-# DEFAULT_API_HOST = "localhost:8000"
 SUCCESS_CODES = {"get": 200, "post": 201, "patch": 200, "put": 200, "delete": 204}
 
 

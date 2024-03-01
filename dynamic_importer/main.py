@@ -7,8 +7,10 @@ import click
 import urllib3
 
 from dynamic_importer.api.client import CTClient
+from dynamic_importer.processors import BaseProcessor
 from dynamic_importer.processors import get_processor_class
 from dynamic_importer.processors import get_supported_formats
+from dynamic_importer.util import validate_env_values
 
 
 @click.group()
@@ -18,14 +20,11 @@ def import_config():
 
 @import_config.command()
 @click.option(
-    "-i",
-    "--input-files",
-    help="Full path to the file(s) to be imported. Can be a single file or a directory of files.",
-)
-@click.option(
     "-t",
     "--file-type",
+    type=click.Choice(get_supported_formats(), case_sensitive=False),
     help=f"Type of file to process. Must be one of: {get_supported_formats()}",
+    required=True,
 )
 @click.option(
     "--default-values",
@@ -34,30 +33,42 @@ def import_config():
     required=False,
 )
 @click.option(
+    "--env-values",
+    help="Full path to a file containing environment specific values for the config data. "
+    + "Should be in the format of `env:file_path`",
+    multiple=True,
+    required=False,
+    callback=validate_env_values,
+)
+@click.option(
     "-o",
     "--output-dir",
     help="Directory to write processed output to. Default is current directory",
     default=".",
     required=False,
 )
-@click.option(
-    "--walk-subdirs",
-    help="Enables walking subdirectories when processing a directory of files",
-    is_flag=True,
-)
-def process_configs(input_files, file_type, default_values, output_dir, walk_subdirs):
-    input_files = input_files.rstrip("/")
+def process_configs(file_type, default_values, env_values, output_dir):
+    if not default_values and not env_values:
+        raise click.UsageError(
+            "At least one of --default-values and --env-values must be provided"
+        )
+    input_files = {}
     if default_values:
         click.echo(f"Using default values from: {default_values}")
-    click.echo(f"Processing {file_type} files from: {input_files}")
-    input_filename = input_files.split("/")[-1]
-    if os.path.isfile(input_files):
-        input_filename = ".".join(input_files.split("/")[-1].split(".")[:-1])
+        input_files["default"] = default_values
+    for env_value in env_values:
+        env, file_path = env_value.split(":")
+        click.echo(f"Using {env}-specific values from: {file_path}")
+        input_files[env] = file_path
+    click.echo(f"Processing {file_type} files from: {', '.join(input_files)}")
 
     processing_class = get_processor_class(file_type)
-    processor = processing_class(default_values, input_files)
+    processor: BaseProcessor = processing_class(input_files)
     template, config_data = processor.process()
 
+    input_filename = ".".join(
+        list(input_files.values())[0].split("/")[-1].split(".")[:-1]
+    )
     template_out_file = f"{output_dir}/{input_filename}.cttemplate"
     config_out_file = f"{output_dir}/{input_filename}.ctconfig"
 
@@ -75,12 +86,12 @@ def process_configs(input_files, file_type, default_values, output_dir, walk_sub
 @click.option(
     "-d",
     "--data-file",
-    help="Full path to config data file generated from process_file command",
+    help="Full path to config data file generated from process_configs command",
 )
 @click.option(
     "-m",
     "--template-file",
-    help="Full path to template file generated from process_file command",
+    help="Full path to template file generated from process_configs command",
 )
 @click.option("-p", "--project", help="CloudTruth project to import data into")
 @click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
@@ -119,27 +130,60 @@ def create_data(
 
 
 @import_config.command()
-@click.option("-i", "--input-file", help="Full path to the file to be imported")
+@click.option(
+    "--default-values",
+    help="Full path to a file containing default values for the config data",
+    default=None,
+    required=False,
+)
+@click.option(
+    "--env-values",
+    help="Full path to a file containing environment specific values for the config data. "
+    + "Should be in the format of `env:file_path`",
+    multiple=True,
+    required=False,
+    callback=validate_env_values,
+)
 @click.option(
     "-t",
     "--file-type",
     help=f"Type of file to process. Must be one of: {get_supported_formats()}",
+    required=True,
 )
 @click.option(
     "-d",
     "--data-file",
-    help="Full path to config data file generated from process_file command",
+    help="Full path to config data file generated from process_configs command",
+    required=True,
 )
-def regenerate_template(input_file, file_type, data_file):
-    input_filename = ".".join(input_file.split("/")[-1].split(".")[:-1])
-    processing_class = get_processor_class(file_type)
+def regenerate_template(default_values, env_values, file_type, data_file):
+    if not default_values and not env_values:
+        raise click.UsageError(
+            "At least one of --default-values and --env-values must be provided"
+        )
+    output_dir = os.path.dirname(data_file) or "."
+    input_files = {}
+    if default_values:
+        click.echo(f"Using default values from: {default_values}")
+        input_files["default"] = default_values
+    for env_value in env_values:
+        env, file_path = env_value.split(":")
+        click.echo(f"Using {env}-specific values from: {file_path}")
+        input_files[env] = file_path
+    click.echo(f"Processing {file_type} files from: {', '.join(input_files)}")
+
     config_data = {}
     with open(data_file, "r") as fp:
         config_data = json.load(fp)
-    processor = processing_class(input_file)
+
+    processing_class = get_processor_class(file_type)
+    processor: BaseProcessor = processing_class(input_files)
     template, _ = processor.process(hints=config_data)
 
-    template_out_file = f"{input_filename}.cttemplate"
+    input_filename = ".".join(
+        list(input_files.values())[0].split("/")[-1].split(".")[:-1]
+    )
+    template_out_file = f"{output_dir}/{input_filename}.cttemplate"
     click.echo(f"Writing template to: {template_out_file}")
     with open(template_out_file, "w+") as fp:
         template_body = processor.generate_template(config_data)
