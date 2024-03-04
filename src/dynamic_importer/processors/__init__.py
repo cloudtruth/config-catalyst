@@ -52,7 +52,7 @@ class BaseProcessor:
     values = None
     template: Dict = {}
 
-    def __init__(self, env_values: Dict):
+    def __init__(self, env_values: Dict) -> None:
         raise NotImplementedError("Subclasses must implement the __init__ method")
 
     def guess_type(self, value):

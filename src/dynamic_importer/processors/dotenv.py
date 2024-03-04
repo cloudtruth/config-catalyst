@@ -6,7 +6,6 @@ from typing import Optional
 
 from dotenv import dotenv_values  # type: ignore[import-not-found]
 from dotenv.main import DotEnv  # type: ignore[import-not-found]
-
 from dynamic_importer.processors import BaseProcessor
 
 

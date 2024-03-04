@@ -9,7 +9,7 @@ from dynamic_importer.processors import BaseProcessor
 
 
 class JSONProcessor(BaseProcessor):
-    def __init__(self, env_values: Dict):
+    def __init__(self, env_values: Dict) -> None:
         for env, file_path in env_values.items():
             with open(file_path, "r") as fp:
                 try:

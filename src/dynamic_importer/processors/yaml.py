@@ -5,7 +5,6 @@ from typing import Dict
 from typing import Optional
 
 import yaml
-
 from dynamic_importer.processors import BaseProcessor
 
 

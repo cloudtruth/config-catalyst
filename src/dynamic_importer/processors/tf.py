@@ -9,7 +9,6 @@ from typing import Tuple
 from typing import Union
 
 import hcl2
-
 from dynamic_importer.processors import BaseProcessor
 
 
