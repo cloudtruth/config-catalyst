@@ -7,10 +7,10 @@ from unittest import TestCase
 from dynamic_importer.api.client import CTClient
 from dynamic_importer.api.client import DEFAULT_API_HOST
 from dynamic_importer.api.exceptions import ResourceNotFoundError
-from tests.mocks import mocked_requests_get
-from tests.mocks import mocked_requests_patch
-from tests.mocks import mocked_requests_post
-from tests.mocks import mocked_requests_upsert_get
+from tests.fixtures.requests import mocked_requests_get
+from tests.fixtures.requests import mocked_requests_patch
+from tests.fixtures.requests import mocked_requests_post
+from tests.fixtures.requests import mocked_requests_upsert_get
 
 
 class TestClient(TestCase):
