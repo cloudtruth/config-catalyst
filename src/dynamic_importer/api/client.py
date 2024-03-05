@@ -6,7 +6,6 @@ from typing import Dict
 from typing import Optional
 
 import requests
-
 from dynamic_importer.api.exceptions import ResourceNotFoundError
 
 DEFAULT_API_HOST = "api.cloudtruth.io"
@@ -139,14 +138,6 @@ class CTClient:
         except KeyError:
             raise ResourceNotFoundError(f"Template {template_name} not found")
 
-    def _populate_type_cache(self) -> None:
-        types = self._make_request("types", "GET")
-        for ct_type in types["results"]:
-            self.cache["types"][ct_type["name"]] = {
-                "url": ct_type["url"],
-                "id": ct_type["id"],
-            }
-
     def get_value(
         self, project_name: str, parameter_name: str, environment_name: str
     ) -> Dict:
@@ -173,6 +164,14 @@ class CTClient:
         except KeyError:
             raise ResourceNotFoundError(f"Parameter {parameter_name} not found")
 
+    def _populate_type_cache(self) -> None:
+        types = self._make_request("types", "GET")
+        for ct_type in types["results"]:
+            self.cache["types"][ct_type["name"]] = {
+                "url": ct_type["url"],
+                "id": ct_type["id"],
+            }
+
     def get_type_id(self, type_name: str) -> str:
         if type_name in self.cache["types"].keys():
             return self.cache["types"][type_name]["id"]
@@ -180,7 +179,7 @@ class CTClient:
         try:
             return self.cache["types"][type_name]["id"]
         except KeyError:
-            raise ValueError(f"Type {type_name} not found")
+            raise ResourceNotFoundError(f"Type {type_name} not found")
 
     def get_type_url(self, type_name: str) -> str:
         if type_name in self.cache["types"].keys():
@@ -189,7 +188,7 @@ class CTClient:
         try:
             return self.cache["types"][type_name]["url"]
         except KeyError:
-            raise ValueError(f"Type {type_name} not found")
+            raise ResourceNotFoundError(f"Type {type_name} not found")
 
     def create_project(self, name: str, description: str = "") -> Dict:
         resp = self._make_request(
@@ -320,6 +319,25 @@ class CTClient:
             data={"environment": environment_id, "internal_value": value},
         )
 
+    def update_parameter(
+        self,
+        project_name: str,
+        parameter_id: str,
+        name: str,
+        description: str = "",
+        type_name: str = "string",
+    ) -> Dict:
+        project_id = self.get_project_id(project_name)
+        return self._make_request(
+            f"projects/{project_id}/parameters/{parameter_id}",
+            "PATCH",
+            data={
+                "name": name,
+                "description": description,
+                "type": type_name,
+            },
+        )
+
     def update_template(
         self,
         project_name: str,
@@ -352,7 +370,10 @@ class CTClient:
             self.create_project(project_name)
 
         try:
-            return self.get_parameter(project_name, name)
+            parameter_id = self.get_parameter_id(project_name, name)
+            return self.update_parameter(
+                project_name, parameter_id, name, description, type_name
+            )
         except ResourceNotFoundError:
             return self.create_parameter(
                 project_name, name, description, type_name, secret, create_dependencies

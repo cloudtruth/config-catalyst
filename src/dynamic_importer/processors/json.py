@@ -9,7 +9,10 @@ from dynamic_importer.processors import BaseProcessor
 
 
 class JSONProcessor(BaseProcessor):
-    def __init__(self, env_values: Dict):
+    def __init__(self, env_values: Dict) -> None:
+        # the click test library seems to reuse Processor classes somehow
+        # so we reset self.parameters_and_values to avoid test pollution
+        self.parameters_and_values: Dict = {}
         for env, file_path in env_values.items():
             with open(file_path, "r") as fp:
                 try:
@@ -25,9 +28,12 @@ class JSONProcessor(BaseProcessor):
         template_body = json.dumps(template, indent=4)
         if config_data:
             for _, data in config_data.items():
-                if data["type"] != "string":
-                    # JSON strings use double quotes
-                    reference = rf'"(\{{\{{\s+cloudtruth.parameters.{data["param_name"]}\s+\}}\}})"'
-                    template_body = sub(reference, r"\1", template_body)
+                try:
+                    if data["type"] != "string":
+                        # JSON strings use double quotes
+                        reference = rf'"(\{{\{{\s+cloudtruth.parameters.{data["param_name"]}\s+\}}\}})"'
+                        template_body = sub(reference, r"\1", template_body)
+                except KeyError:
+                    raise RuntimeError(f"data: {data}")
 
         return template_body

@@ -19,10 +19,22 @@ dev = [
     "pre-commit",
     "mypy",
     "pytest",
+    "pytest-black",
     "pytest-cov",
+    "pytest-mypy",
+    "types-requests",
+    "types-pyyaml",
 ]
 [project.scripts]
 cloudtruth-dynamic-importer = "dynamic_importer.main:import_config"
 
-[tool.setuptools]
-packages = ["dynamic_importer"]
+[tool.mypy]
+packages = "dynamic_importer"
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--cov=dynamic_importer", "--cov-report=term-missing", "--cov-report=xml", "--mypy"]
+minversion = 6.0
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dynamic_importer", "tests"]

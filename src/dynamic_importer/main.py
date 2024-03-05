@@ -5,7 +5,6 @@ import os
 
 import click
 import urllib3
-
 from dynamic_importer.api.client import CTClient
 from dynamic_importer.processors import BaseProcessor
 from dynamic_importer.processors import get_processor_class

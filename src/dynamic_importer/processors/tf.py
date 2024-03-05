@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from re import sub
 from typing import Any
 from typing import Dict
@@ -9,7 +10,6 @@ from typing import Tuple
 from typing import Union
 
 import hcl2
-
 from dynamic_importer.processors import BaseProcessor
 
 
@@ -18,6 +18,10 @@ class TFProcessor(BaseProcessor):
 
     def __init__(self, env_values: Dict) -> None:
         for env, file_path in env_values.items():
+            if not os.path.isfile(file_path):
+                raise ValueError(
+                    f"Path to environment values file {file_path} could not be accessed."
+                )
             try:
                 with open(file_path, "r") as fp:
                     # hcl2 does not support dumping to a string/file,
@@ -37,7 +41,7 @@ class TFProcessor(BaseProcessor):
         environment = "default"
         if config_data:
             for _, data in config_data.items():
-                value = data["values"][environment]
+                value = str(data["values"][environment])
                 reference = f'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
                 template_body = sub(value, reference, template_body)
 
