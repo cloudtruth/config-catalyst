@@ -2,8 +2,9 @@
 Extract parameters from your existing config and import to your CloudTruth organization
 
 ![CI](https://github.com/cloudtruth/dynamic-importer/actions/workflows/ci.yaml/badge.svg)
-![Docker pulls](https://img.shields.io/docker/pulls/cloudtruth/dynamic-importer)
 ![Codecov](https://img.shields.io/codecov/c/github/cloudtruth/dynamic-importer)
+![Docker pulls](https://img.shields.io/docker/pulls/cloudtruth/dynamic-importer)
+![version](https://img.shields.io/docker/v/cloudtruth/dynamic-importer)
 
 
 # Supported file types
