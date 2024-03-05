@@ -1,6 +1,11 @@
 # dynamic-importer
 Extract parameters from your existing config and import to your CloudTruth organization
 
+![CI](https://github.com/cloudtruth/dynamic-importer/actions/workflows/ci.yml/badge.svg)
+![Docker pulls](https://img.shields.io/docker/pulls/cloudtruth/dynamic-importer)
+![Codecov](https://img.shields.io/codecov/c/github/cloudtruth/dynamic-importer)
+
+
 # Supported file types
 * JSON
 * YAML
@@ -53,10 +58,12 @@ By default, the utility will prompt for your CloudTruth API Key. You may also pr
 
 # Development
 1. Set up a virtualenv
-1. From your checkout of the code, `pip install -e .`
+1. From your checkout of the code, `pip install -e .[dev]`
 
 # Testing
-TBD
+Test code lives in `src/tests` and uses [click.testing](https://click.palletsprojects.com/en/8.1.x/testing/) as the entrypoint for all commands and processors. There are additional unit tests for the api client code, which heavily leverages mocks for the CloudTruth API. See examples in `tests.fixures.requests` for more.
+
+Pre-commit is installed in this repo and should be used to verify code organization and formatting. To set it up, run `pre-commit install` in your virtualenv
 
 # Contributing
 Issues, pull requests, and discussions are welcomed.
