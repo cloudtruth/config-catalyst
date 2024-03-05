@@ -233,3 +233,86 @@ def mocked_requests_post(*args, **kwargs):
         )
 
     return MockResponse(None, 404)
+
+
+def mocked_requests_localhost_get(*args, **kwargs):
+    class MockResponse:
+        def __init__(self, json_data, status_code):
+            self.json_data = json_data
+            self.status_code = status_code
+
+        def json(self):
+            return self.json_data
+
+        def text(self):
+            return self.json_data
+
+    url = args[0]
+    if url == "https://localhost:8000/api/v1/projects/":
+        return MockResponse(
+            {"results": [{"id": "1", "url": "/projects/1/", "name": "testproj"}]}, 200
+        )
+    elif url == "https://localhost:8000/api/v1/environments/":
+        return MockResponse(
+            {"results": [{"id": "1", "url": "/environments/1/", "name": "default"}]},
+            200,
+        )
+    elif url == "https://localhost:8000/api/v1/projects/1/parameters/":
+        return MockResponse(
+            {
+                "results": [
+                    {"id": "1", "url": "/projects/1/parameters/1/", "name": "boop"}
+                ]
+            },
+            200,
+        )
+    elif url == "https://localhost:8000/api/v1/projects/1/templates/":
+        return MockResponse({"results": []}, 200)
+    elif url == "https://localhost:8000/api/v1/projects/1/parameters/2/values/":
+        return MockResponse({"results": []}, 200)
+
+
+def mocked_requests_localhost_post(*args, **kwargs):
+    class MockResponse:
+        def __init__(self, json_data, status_code):
+            self.json_data = json_data
+            self.status_code = status_code
+
+        def json(self):
+            return self.json_data
+
+        def text(self):
+            return self.json_data
+
+    url = args[0]
+    if url == "https://localhost:8000/api/v1/projects/":
+        return MockResponse(
+            {"id": "2", "url": "/projects/2/", "name": kwargs["json"]["name"]}, 201
+        )
+    elif url == "https://localhost:8000/api/v1/projects/1/parameters/":
+        return MockResponse(
+            {
+                "id": "2",
+                "url": "/projects/1/parameters/2/",
+                "name": kwargs["json"]["name"],
+            },
+            201,
+        )
+    elif url == "https://localhost:8000/api/v1/projects/1/templates/":
+        return MockResponse(
+            {
+                "id": "1",
+                "url": "/projects/1/templates/1/",
+                "name": kwargs["json"]["name"],
+            },
+            201,
+        )
+    elif url == "https://localhost:8000/api/v1/projects/1/parameters/2/values/":
+        return MockResponse(
+            {
+                "id": "1",
+                "url": "/projects/1/parameters/2/values/1/",
+                "internal_value": kwargs["json"]["internal_value"],
+            },
+            201,
+        )

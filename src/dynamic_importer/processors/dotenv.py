@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from re import sub
 from typing import Dict
 from typing import Optional
@@ -12,6 +13,10 @@ from dynamic_importer.processors import BaseProcessor
 class DotEnvProcessor(BaseProcessor):
     def __init__(self, env_values: Dict) -> None:
         for env, file_path in env_values.items():
+            if not os.path.isfile(file_path):
+                raise ValueError(
+                    f"Path to environment values file {file_path} could not be accessed."
+                )
             self.raw_data[env] = dotenv_values(file_path)
 
     def encode_template_references(
