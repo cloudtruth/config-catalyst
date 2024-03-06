@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from time import time
 
 import click
 import urllib3
@@ -10,6 +11,8 @@ from dynamic_importer.processors import BaseProcessor
 from dynamic_importer.processors import get_processor_class
 from dynamic_importer.processors import get_supported_formats
 from dynamic_importer.util import validate_env_values
+
+CREATE_DATA_MSG_INTERVAL = 10
 
 
 @click.group()
@@ -170,8 +173,12 @@ def create_data(data_file, template_file, project, k, c, u):
     client = CTClient(api_key, skip_ssl_validation=k)
     with open(data_file, "r") as fp:
         config_data = json.load(fp)
-        click.echo(f"Creating {len(config_data.values())} parameters")
+        total_params = len(config_data.values())
+        click.echo(f"Creating {total_params} parameters")
+        start_time = time()
+        i = 0
         for raw_key, config_data in config_data.items():
+            i += 1
             client.upsert_parameter(
                 project,
                 name=config_data["param_name"],
@@ -187,9 +194,16 @@ def create_data(data_file, template_file, project, k, c, u):
                     value,
                     create_dependencies=c,
                 )
+            cur_time = time()
+            if cur_time - start_time > CREATE_DATA_MSG_INTERVAL:
+                click.echo(f"Created {i} parameters, {total_params - i} remaining")
+                start_time = time()
     with open(template_file, "r") as fp:
         template = fp.read()
+        click.echo(f"Uploading template: {template_file}")
         client.upsert_template(project, name=template_file, body=template)
+
+    click.echo("Data upload to CloudTruth complete!")
 
 
 if __name__ == "__main__":
