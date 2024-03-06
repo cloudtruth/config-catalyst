@@ -17,6 +17,7 @@ def validate_env_values(ctx, param, value):
     return value
 
 
+# These classes are not actively used. But they'll probably be useful at some point.
 class MutuallyExclusiveOption(Option):
     def __init__(self, *args, **kwargs):
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
