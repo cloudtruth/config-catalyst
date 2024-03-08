@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections import defaultdict
 from time import time
 
 import click
@@ -13,6 +14,25 @@ from dynamic_importer.processors import get_supported_formats
 from dynamic_importer.util import validate_env_values
 
 CREATE_DATA_MSG_INTERVAL = 10
+DIRS_TO_IGNORE = [
+    ".git",
+    ".github",
+    ".vscode",
+    "__pycache__",
+    "venv",
+    "node_modules",
+    "dist",
+    "build",
+    "target",
+]
+EXTENSIONS_TO_FILE_TYPES = {
+    ".json": "json",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".env": "dotenv",
+    ".tf": "tf",
+    ".tfvars": "tfvars",
+}
 
 
 @click.group()
@@ -204,6 +224,101 @@ def create_data(data_file, template_file, project, k, c, u):
         client.upsert_template(project, name=template_file, body=template)
 
     click.echo("Data upload to CloudTruth complete!")
+
+
+@import_config.command()
+@click.option(
+    "-c",
+    "--config-dir",
+    help="Full path to directory to walk and locate configs",
+    required=True,
+)
+@click.option(
+    "-t",
+    "--file-types",
+    type=click.Choice(get_supported_formats(), case_sensitive=False),
+    help=f"Type of file to process. Must be one of: {get_supported_formats()}",
+    required=True,
+    multiple=True,
+)
+@click.option(
+    "-o",
+    "--output-dir",
+    help="Directory to write processed output to. Default is current directory",
+    default=".",
+    required=False,
+)
+def walk_directories(config_dir, file_types, output_dir):
+    walked_files = {}
+    output_dir = output_dir.rstrip("/")
+    for root, dirs, files in os.walk(config_dir):
+        root = root.rstrip("/")
+        last_project = None
+        for file in files:
+            file_path = f"{root}/{file}"
+            name, file_extension = os.path.splitext(file_path)
+            if name == ".env":
+                file_extension = ".env"
+            if data_type := EXTENSIONS_TO_FILE_TYPES.get(file_extension):
+                confirmed_type = click.prompt(
+                    f"File type {data_type} detected for {file_path}. Is this correct?",
+                    type=click.Choice(get_supported_formats(), case_sensitive=False),
+                    default=data_type,
+                )
+                if confirmed_type not in file_types:
+                    click.echo(
+                        f"Skipping {confirmed_type} file {file_path} as "
+                        f"it is not included in the supplied file types: {', '.join(file_types)}"
+                    )
+                    continue
+                project = click.prompt(
+                    f"Enter the CloudTruth project to import {file_path} into",
+                    default=last_project,
+                )
+                if project:
+                    last_project = project
+                env = click.prompt(
+                    f"Enter the CloudTruth environment to import {file_path} into",
+                )
+                if not env:
+                    env = click.prompt(
+                        "Environment cannot be empty. Please enter a CloudTruth environment"
+                    )
+                walked_files[file_path] = {
+                    "type": confirmed_type,
+                    "path": file_path,
+                    "project": project,
+                    "environment": env,
+                }
+        for dir in dirs:
+            if dir in DIRS_TO_IGNORE:
+                dirs.remove(dir)
+
+    project_files = defaultdict(lambda: defaultdict(list))
+    for v in walked_files.values():
+        project_files[v["project"]][v["type"]].append(
+            {"path": v["path"], "environment": v["environment"]}
+        )
+    for project, type_info in project_files.items():
+        for file_type, file_meta in type_info.items():
+            env_paths = {d["environment"]: d["path"] for d in file_meta}
+            input_filename = ".".join(
+                list(env_paths.values())[0].split("/")[-1].split(".")[:-1]
+            )
+            click.echo(f"Processing {project} files: {', '.join(env_paths.values())}")
+            processing_class = get_processor_class(file_type)
+            processor: BaseProcessor = processing_class(env_paths)
+            template, config_data = processor.process()
+            template_out_file = f"{output_dir}/{input_filename}.cttemplate"
+            config_out_file = f"{output_dir}/{input_filename}.ctconfig"
+            click.echo(f"Writing template to: {template_out_file}")
+            with open(template_out_file, "w+") as fp:
+                template_body = processor.generate_template()
+                fp.write(template_body)
+
+            click.echo(f"Writing config data to: {config_out_file}")
+            with open(config_out_file, "w+") as fp:
+                json.dump(config_data, fp, indent=4)
 
 
 if __name__ == "__main__":

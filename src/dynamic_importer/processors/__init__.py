@@ -35,17 +35,6 @@ def get_supported_formats() -> List[str]:
 
 class BaseProcessor:
     default_values = None
-    dirs_to_ignore = [
-        ".git",
-        ".github",
-        ".vscode",
-        "__pycache__",
-        "venv",
-        "node_modules",
-        "dist",
-        "build",
-        "target",
-    ]
     parameters_and_values: Dict = {}
     parameters = None
     raw_data: Dict = {}

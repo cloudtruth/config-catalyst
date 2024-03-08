@@ -10,8 +10,8 @@ from dynamic_importer.processors import BaseProcessor
 
 class JSONProcessor(BaseProcessor):
     def __init__(self, env_values: Dict) -> None:
-        # the click test library seems to reuse Processor classes somehow
-        # so we reset self.parameters_and_values to avoid test pollution
+        # Due to an unknown bug, self.parameters_and_values can persist between
+        # Processor instances. Therefore, we reset it here.
         self.parameters_and_values: Dict = {}
         for env, file_path in env_values.items():
             with open(file_path, "r") as fp:
