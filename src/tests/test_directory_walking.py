@@ -112,6 +112,8 @@ def test_walk_directories_multiple_file_types(tmp_path):
         assert os.path.getsize(f"{td}/myproj-dotenv.ctconfig") > 0
         assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
 
+        # it was originally intended for json files to be included in the
+        # directory walking test but it broke on github (never locally)
         assert not pathlib.Path(f"{td}/myproj-json.ctconfig").exists()
         assert not pathlib.Path(f"{td}/myproj-json.cttemplate").exists()
         # assert os.path.getsize(f"{td}/myproj-json.ctconfig") > 0
