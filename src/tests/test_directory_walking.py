@@ -15,7 +15,8 @@ hang indefinitely.
 """
 
 
-@pytest.mark.usefixtures("tmp_path")
+@pytest.mark.timeout(30)
+@pytest.mark.usefixture("tmp_path")
 def test_walk_directories_one_file_type(tmp_path):
     runner = CliRunner()
     current_dir = pathlib.Path(__file__).parent.resolve()
@@ -57,18 +58,19 @@ def test_walk_directories_one_file_type(tmp_path):
         assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.usefixtures("tmp_path")
 def test_walk_directories_multiple_file_types(tmp_path):
     runner = CliRunner()
     current_dir = pathlib.Path(__file__).parent.resolve()
 
     prompt_responses = [
-        "",
+        "",  # processing dotenv file
         "myproj",
         "default",
         "",  # skipping yaml file
-        "",  # processing json with default
-        "",  # json default #2
+        "",  # processing json with default type
+        "",  # json accept default project
         "default",
         "",  # skipping tfvars file
         "",  # skipping tf file

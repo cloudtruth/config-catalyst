@@ -50,10 +50,6 @@ def walk_files(
             env = click.prompt(
                 f"Enter the CloudTruth environment to import {file_path} into",
             )
-            if not env:
-                env = click.prompt(
-                    "Environment cannot be empty. Please enter a CloudTruth environment"
-                )
             walked_files[file_path] = {
                 "type": confirmed_type,
                 "path": file_path,
