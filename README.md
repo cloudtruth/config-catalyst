@@ -24,7 +24,7 @@ This utility is distributed as a Docker container and can be pulled from cloudtr
 ## Processing a single file
 An example of how to process a .env file
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs --default-values /app/samples/.env.sample --file-type dotenv --output-dir /app/files/
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs -p myproj --default-values /app/samples/.env.sample --file-type dotenv --output-dir /app/files/
 ```
 
 This command will mount a subdir `files` from the current working directory to the container. Assuming your input file is in that dir, the processed files will be placed in that dir once processing has completed.
@@ -32,7 +32,8 @@ This command will mount a subdir `files` from the current working directory to t
 ## Processing several files
 An example of how to orocess several .env files and create values for each environment
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs -t dotenv \
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs \
+    -p myproj -t dotenv \
     --default-values /app/samples/dotenvs/.env.default.sample \
     --env-values development:/app/samples/dotenvs/.env.dev.sample \
     --env-values staging:/app/samples/dotenvs/.env.staging.sample \
