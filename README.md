@@ -24,7 +24,7 @@ This utility is distributed as a Docker container and can be pulled from cloudtr
 ## Processing a single file
 An example of how to process a .env file
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs --default-values /app/dynamic_importer/samples/.env.sample --file-type dotenv --output-dir /app/files/
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs --default-values /app/samples/.env.sample --file-type dotenv --output-dir /app/files/
 ```
 
 This command will mount a subdir `files` from the current working directory to the container. Assuming your input file is in that dir, the processed files will be placed in that dir once processing has completed.
@@ -33,19 +33,25 @@ This command will mount a subdir `files` from the current working directory to t
 An example of how to orocess several .env files and create values for each environment
 ```
 docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs -t dotenv \
-    --default-values /app/dynamic_importer/samples/dotenvs/.env.default.sample \
-    --env-values development:/app/dynamic_importer/samples/dotenvs/.env.dev.sample \
-    --env-values staging:/app/dynamic_importer/samples/dotenvs/.env.staging.sample \
-    --env-values production:/app/dynamic_importer/samples/dotenvs/.env.prod.sample \
+    --default-values /app/samples/dotenvs/.env.default.sample \
+    --env-values development:/app/samples/dotenvs/.env.dev.sample \
+    --env-values staging:/app/samples/dotenvs/.env.staging.sample \
+    --env-values production:/app/samples/dotenvs/.env.prod.sample \
     --output-dir /app/files/
 ```
 
+## Procesing a directory tree
+You may also feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats.
+
+```
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer walk-directories -c /app/samples/ -t dotenv -t json -t tf -o walk_output/
+```
 
 ## Editing template references
 There may be times when this utility is too aggressive or you want a variable to remain hard-coded in your CloudTruth template. In that case, you can remove the references from the generated `.ctconfig` file and re-generate the template.
 
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer regenerate-template --input-file /app/dynamic_importer/samples/.env.sample --file-type dotenv --data-file /app/files/.env.ctconfig --output-dir /app/files/
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer regenerate-template --input-file /app/samples/.env.sample --file-type dotenv --data-file /app/files/.env.ctconfig --output-dir /app/files/
 ```
 
 ## Uploading data to CloudTruth
@@ -64,12 +70,14 @@ By default, the utility will prompt for your CloudTruth API Key. You may also pr
 # Testing
 Test code lives in `src/tests` and uses [click.testing](https://click.palletsprojects.com/en/8.1.x/testing/) as the entrypoint for all commands and processors. There are additional unit tests for the api client code, which heavily leverages mocks for the CloudTruth API. See examples in `tests.fixures.requests` for more.
 
+To run unittests, run `pytest` from within your virtualenv.
+
 Pre-commit is installed in this repo and should be used to verify code organization and formatting. To set it up, run `pre-commit install` in your virtualenv
 
 # Contributing
-Issues, pull requests, and discussions are welcomed.
+Issues, pull requests, and discussions are welcomed. Please vote for any issues tagged with [needs votes](https://github.com/cloudtruth/dynamic-importer/issues?q=is%3Aissue+is%3Aopen+label%3A%22needs+votes%22)
 
-See dynamic_importer.processors and the subclasses within for examples of the current design. TL;DR - if you can convert the source into a dict, BaseProcessor._traverse_data should handle most of the heavy lifting.
+See `dynamic_importer.processors` and the subclasses within for examples of the current design. TL;DR - if you can convert the source into a dict, `BaseProcessor._traverse_data` should handle most of the heavy lifting.
 
 # Counter-examples
 Because this has come up internally, this utility is intended to process config data, not application code or even raw IaC code. If you want to feed it a full Terraform manifest, you're going to get strange results. Pull your common variables into a variables.tf first!

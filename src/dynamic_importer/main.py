@@ -12,6 +12,7 @@ from dynamic_importer.processors import BaseProcessor
 from dynamic_importer.processors import get_processor_class
 from dynamic_importer.processors import get_supported_formats
 from dynamic_importer.util import validate_env_values
+from dynamic_importer.walker import walk_files
 
 CREATE_DATA_MSG_INTERVAL = 10
 DIRS_TO_IGNORE = [
@@ -25,15 +26,6 @@ DIRS_TO_IGNORE = [
     "build",
     "target",
 ]
-# mime types think .env and tf files are plain text
-EXTENSIONS_TO_FILE_TYPES = {
-    ".json": "json",
-    ".yaml": "yaml",
-    ".yml": "yaml",
-    ".env": "dotenv",
-    ".tf": "tf",
-    ".tfvars": "tfvars",
-}
 
 
 @click.group()
@@ -70,7 +62,10 @@ def import_config():
     default=".",
     required=False,
 )
-def process_configs(file_type, default_values, env_values, output_dir):
+@click.option(
+    "-p", "--project", help="CloudTruth project to import data into", required=True
+)
+def process_configs(file_type, default_values, env_values, output_dir, project):
     if not default_values and not env_values:
         raise click.UsageError(
             "At least one of --default-values and --env-values must be provided"
@@ -88,11 +83,8 @@ def process_configs(file_type, default_values, env_values, output_dir):
     processor: BaseProcessor = processing_class(input_files)
     template, config_data = processor.process()
 
-    input_filename = ".".join(
-        list(input_files.values())[0].split("/")[-1].split(".")[:-1]
-    )
-    template_out_file = f"{output_dir}/{input_filename}.cttemplate"
-    config_out_file = f"{output_dir}/{input_filename}.ctconfig"
+    template_out_file = f"{output_dir}/{project}-{file_type}.cttemplate"
+    config_out_file = f"{output_dir}/{project}-{file_type}.ctconfig"
 
     click.echo(f"Writing template to: {template_out_file}")
     with open(template_out_file, "w+") as fp:
@@ -253,49 +245,13 @@ def walk_directories(config_dir, file_types, output_dir):
     output_dir = output_dir.rstrip("/")
     for root, dirs, files in os.walk(config_dir):
         root = root.rstrip("/")
-        last_project = None
 
         # skip over known non-config directories
         for dir in DIRS_TO_IGNORE:
             if dir in dirs:
                 dirs.remove(dir)
 
-        for file in files:
-            file_path = f"{root}/{file}"
-            name, file_extension = os.path.splitext(file)
-            if name.startswith(".env"):
-                file_extension = ".env"
-            if data_type := EXTENSIONS_TO_FILE_TYPES.get(file_extension):
-                confirmed_type = click.prompt(
-                    f"File type {data_type} detected for {file_path}. Is this correct?",
-                    type=click.Choice(get_supported_formats(), case_sensitive=False),
-                    default=data_type,
-                )
-                if confirmed_type not in file_types:
-                    click.echo(
-                        f"Skipping {confirmed_type} file {file_path} as "
-                        f"it is not included in the supplied file types: {', '.join(file_types)}"
-                    )
-                    continue
-                project = click.prompt(
-                    f"Enter the CloudTruth project to import {file_path} into",
-                    default=last_project,
-                )
-                if project:
-                    last_project = project
-                env = click.prompt(
-                    f"Enter the CloudTruth environment to import {file_path} into",
-                )
-                if not env:
-                    env = click.prompt(
-                        "Environment cannot be empty. Please enter a CloudTruth environment"
-                    )
-                walked_files[file_path] = {
-                    "type": confirmed_type,
-                    "path": file_path,
-                    "project": project,
-                    "environment": env,
-                }
+        walked_files.update(walk_files(root, files, file_types))
 
     project_files = defaultdict(lambda: defaultdict(list))
     for v in walked_files.values():
@@ -305,15 +261,15 @@ def walk_directories(config_dir, file_types, output_dir):
     for project, type_info in project_files.items():
         for file_type, file_meta in type_info.items():
             env_paths = {d["environment"]: d["path"] for d in file_meta}
-            input_filename = ".".join(
-                list(env_paths.values())[0].split("/")[-1].split(".")[:-1]
-            )
+
             click.echo(f"Processing {project} files: {', '.join(env_paths.values())}")
             processing_class = get_processor_class(file_type)
             processor: BaseProcessor = processing_class(env_paths)
             template, config_data = processor.process()
-            template_out_file = f"{output_dir}/{input_filename}.cttemplate"
-            config_out_file = f"{output_dir}/{input_filename}.ctconfig"
+
+            template_out_file = f"{output_dir}/{project}-{file_type}.cttemplate"
+            config_out_file = f"{output_dir}/{project}-{file_type}.ctconfig"
+
             click.echo(f"Writing template to: {template_out_file}")
             with open(template_out_file, "w+") as fp:
                 template_body = processor.generate_template()
