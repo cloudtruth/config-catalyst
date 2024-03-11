@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pathlib
-import traceback
 from unittest import mock
 from unittest import TestCase
 
@@ -28,7 +27,9 @@ Options:
 
     def test_process_configs_no_args(self):
         runner = CliRunner()
-        result = runner.invoke(import_config, ["process-configs", "-t", "dotenv"])
+        result = runner.invoke(
+            import_config, ["process-configs", "-t", "dotenv", "-p", "testproj"]
+        )
         self.assertEqual(result.exit_code, 2)
         self.assertIn(
             "Error: At least one of --default-values and --env-values must be provided",
@@ -58,8 +59,10 @@ def test_cli_process_configs_dotenv(tmp_path):
                 "process-configs",
                 "-t",
                 "dotenv",
+                "-p",
+                "testproj",
                 "--default-values",
-                f"{current_dir}/../samples/.env.sample",
+                f"{current_dir}/../../samples/.env.sample",
                 "--output-dir",
                 td,
             ],
@@ -79,8 +82,10 @@ def test_cli_process_configs_json(tmp_path):
                 "process-configs",
                 "-t",
                 "json",
+                "-p",
+                "testproj",
                 "--default-values",
-                f"{current_dir}/../samples/short.json",
+                f"{current_dir}/../../samples/short.json",
                 "--output-dir",
                 td,
             ],
@@ -100,8 +105,10 @@ def test_cli_process_configs_tf(tmp_path):
                 "process-configs",
                 "-t",
                 "tf",
+                "-p",
+                "testproj",
                 "--default-values",
-                f"{current_dir}/../samples/variables.tf",
+                f"{current_dir}/../../samples/variables.tf",
                 "--output-dir",
                 td,
             ],
@@ -121,8 +128,10 @@ def test_cli_process_configs_tfvars(tmp_path):
                 "process-configs",
                 "-t",
                 "tfvars",
+                "-p",
+                "testproj",
                 "--default-values",
-                f"{current_dir}/../samples/terraform.tfvars",
+                f"{current_dir}/../../samples/terraform.tfvars",
                 "--output-dir",
                 td,
             ],
@@ -142,8 +151,10 @@ def test_cli_process_configs_yaml(tmp_path):
                 "process-configs",
                 "-t",
                 "yaml",
+                "-p",
+                "testproj",
                 "--default-values",
-                f"{current_dir}/../samples/azureTRE.yaml",
+                f"{current_dir}/../../samples/azureTRE.yaml",
                 "--output-dir",
                 td,
             ],
@@ -158,9 +169,9 @@ def test_cli_process_configs_yaml(tmp_path):
                 "-t",
                 "yaml",
                 "--default-values",
-                f"{current_dir}/../samples/azureTRE.yaml",
+                f"{current_dir}/../../samples/azureTRE.yaml",
                 "--data-file",
-                f"{td}/azureTRE.ctconfig",
+                f"{td}/testproj-yaml.ctconfig",
             ],
             catch_exceptions=False,
         )
@@ -188,8 +199,10 @@ def test_cli_import_data_json(mock_get, mock_post, tmp_path):
                 "process-configs",
                 "-t",
                 "json",
+                "-p",
+                "testproj",
                 "--default-values",
-                f"{current_dir}/../samples/short.json",
+                f"{current_dir}/../../samples/short.json",
                 "-o",
                 td,
             ],
@@ -202,17 +215,12 @@ def test_cli_import_data_json(mock_get, mock_post, tmp_path):
             [
                 "create-data",
                 "-d",
-                f"{td}/short.ctconfig",
+                f"{td}/testproj-json.ctconfig",
                 "-m",
-                f"{td}/short.cttemplate",
+                f"{td}/testproj-json.cttemplate",
                 "-p",
                 "testproj",
             ],
             catch_exceptions=False,
         )
-        try:
-            assert result.exit_code == 0
-        except AssertionError:
-            print(result.output)
-            print(traceback.format_tb(result.exc_info[2]))
-            raise
+        assert result.exit_code == 0
