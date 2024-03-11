@@ -25,6 +25,7 @@ DIRS_TO_IGNORE = [
     "build",
     "target",
 ]
+# mime types think .env and tf files are plain text
 EXTENSIONS_TO_FILE_TYPES = {
     ".json": "json",
     ".yaml": "yaml",
@@ -83,7 +84,6 @@ def process_configs(file_type, default_values, env_values, output_dir):
         click.echo(f"Using {env}-specific values from: {file_path}")
         input_files[env] = file_path
     click.echo(f"Processing {file_type} files from: {', '.join(input_files)}")
-
     processing_class = get_processor_class(file_type)
     processor: BaseProcessor = processing_class(input_files)
     template, config_data = processor.process()
@@ -254,10 +254,16 @@ def walk_directories(config_dir, file_types, output_dir):
     for root, dirs, files in os.walk(config_dir):
         root = root.rstrip("/")
         last_project = None
+
+        # skip over known non-config directories
+        for dir in DIRS_TO_IGNORE:
+            if dir in dirs:
+                dirs.remove(dir)
+
         for file in files:
             file_path = f"{root}/{file}"
-            name, file_extension = os.path.splitext(file_path)
-            if name == ".env":
+            name, file_extension = os.path.splitext(file)
+            if name.startswith(".env"):
                 file_extension = ".env"
             if data_type := EXTENSIONS_TO_FILE_TYPES.get(file_extension):
                 confirmed_type = click.prompt(
@@ -290,9 +296,6 @@ def walk_directories(config_dir, file_types, output_dir):
                     "project": project,
                     "environment": env,
                 }
-        for dir in dirs:
-            if dir in DIRS_TO_IGNORE:
-                dirs.remove(dir)
 
     project_files = defaultdict(lambda: defaultdict(list))
     for v in walked_files.values():
