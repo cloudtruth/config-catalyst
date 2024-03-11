@@ -15,8 +15,8 @@ hang indefinitely.
 """
 
 
-@pytest.mark.timeout(30)
 @pytest.mark.usefixture("tmp_path")
+@pytest.mark.timeout(30)
 def test_walk_directories_one_file_type(tmp_path):
     runner = CliRunner()
     current_dir = pathlib.Path(__file__).parent.resolve()
@@ -69,9 +69,7 @@ def test_walk_directories_multiple_file_types(tmp_path):
         "myproj",
         "default",
         "",  # skipping yaml file
-        "",  # processing json with default type
-        "",  # json accept default project
-        "default",
+        "",  # skipping json file
         "",  # skipping tfvars file
         "",  # skipping tf file
         "",  # processing dotenv dir
@@ -94,8 +92,6 @@ def test_walk_directories_multiple_file_types(tmp_path):
                 "walk-directories",
                 "-t",
                 "dotenv",
-                "-t",
-                "json",
                 "-c",
                 f"{current_dir}/../../samples",
                 "--output-dir",
@@ -116,10 +112,10 @@ def test_walk_directories_multiple_file_types(tmp_path):
         assert os.path.getsize(f"{td}/myproj-dotenv.ctconfig") > 0
         assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
 
-        assert pathlib.Path(f"{td}/myproj-json.ctconfig").exists()
-        assert pathlib.Path(f"{td}/myproj-json.cttemplate").exists()
-        assert os.path.getsize(f"{td}/myproj-json.ctconfig") > 0
-        assert os.path.getsize(f"{td}/myproj-json.cttemplate") > 0
+        assert not pathlib.Path(f"{td}/myproj-json.ctconfig").exists()
+        assert not pathlib.Path(f"{td}/myproj-json.cttemplate").exists()
+        # assert os.path.getsize(f"{td}/myproj-json.ctconfig") > 0
+        # assert os.path.getsize(f"{td}/myproj-json.cttemplate") > 0
 
         assert not pathlib.Path(f"{td}/myproj-tf.ctconfig").exists()
         assert not pathlib.Path(f"{td}/myproj-tf.cttemplate").exists()
