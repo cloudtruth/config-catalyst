@@ -12,6 +12,9 @@ from dynamic_importer.processors import BaseProcessor
 
 class DotEnvProcessor(BaseProcessor):
     def __init__(self, env_values: Dict) -> None:
+        # Due to an unknown bug, self.parameters_and_values can persist between
+        # Processor instances. Therefore, we reset it here.
+        self.parameters_and_values: Dict = {}
         for env, file_path in env_values.items():
             if not os.path.isfile(file_path):
                 raise ValueError(
