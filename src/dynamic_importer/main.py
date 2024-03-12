@@ -234,13 +234,18 @@ def create_data(data_file, template_file, project, k, c, u):
     multiple=True,
 )
 @click.option(
+    "--exclude-dirs",
+    help="Directory to exclude from walking. Can be specified multiple times",
+    multiple=True,
+)
+@click.option(
     "-o",
     "--output-dir",
     help="Directory to write processed output to. Default is current directory",
     default=".",
     required=False,
 )
-def walk_directories(config_dir, file_types, output_dir):
+def walk_directories(config_dir, file_types, exclude_dirs, output_dir):
     walked_files = {}
     output_dir = output_dir.rstrip("/")
     for root, dirs, files in os.walk(config_dir):
@@ -250,6 +255,13 @@ def walk_directories(config_dir, file_types, output_dir):
         for dir in DIRS_TO_IGNORE:
             if dir in dirs:
                 dirs.remove(dir)
+
+        # skip over user-specified non-config directories
+        for dir in exclude_dirs:
+            dir = dir.rstrip("/")
+            if os.path.abspath(dir) in [f"{os.path.abspath(root)}/{d}" for d in dirs]:
+                click.echo(f"Excluding directory: {os.path.abspath(dir)}")
+                dirs.remove(os.path.basename(dir))
 
         walked_files.update(walk_files(root, files, file_types))
 
