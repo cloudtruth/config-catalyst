@@ -134,12 +134,14 @@ def test_walk_directories_with_exclusion(tmp_path):
         "",  # processing dotenv file
         "myproj",
         "default",
-        "",  # skipping yaml file
-        "",  # processing json file
+        "",  # processing yaml file
         "",  # using myproj default
         "default",  # use default environment
+        "",  # skipping json file
         "",  # skipping tfvars file
         "",  # skipping tf file
+        "",
+        "",
     ]
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         result = runner.invoke(
@@ -149,7 +151,7 @@ def test_walk_directories_with_exclusion(tmp_path):
                 "-t",
                 "dotenv",
                 "-t",
-                "json",
+                "yaml",
                 "-c",
                 f"{current_dir}/../../samples",
                 "--exclude-dirs",
@@ -167,9 +169,9 @@ def test_walk_directories_with_exclusion(tmp_path):
         assert os.path.getsize(f"{td}/myproj-dotenv.ctconfig") > 0
         assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
 
-        assert pathlib.Path(f"{td}/myproj-json.ctconfig").exists()
-        assert pathlib.Path(f"{td}/myproj-json.cttemplate").exists()
-        assert os.path.getsize(f"{td}/myproj-json.ctconfig") > 0
-        assert os.path.getsize(f"{td}/myproj-json.cttemplate") > 0
+        assert pathlib.Path(f"{td}/myproj-yaml.ctconfig").exists()
+        assert pathlib.Path(f"{td}/myproj-yaml.cttemplate").exists()
+        assert os.path.getsize(f"{td}/myproj-yaml.ctconfig") > 0
+        assert os.path.getsize(f"{td}/myproj-yaml.cttemplate") > 0
 
         assert len(os.listdir(pathlib.Path(f"{td}/"))) == 4

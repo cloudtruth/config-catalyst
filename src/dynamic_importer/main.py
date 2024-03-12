@@ -249,7 +249,6 @@ def walk_directories(config_dir, file_types, exclude_dirs, output_dir):
     walked_files = {}
     output_dir = output_dir.rstrip("/")
     for root, dirs, files in os.walk(config_dir):
-        click.echo(f"Processing directories: {dirs}")
         root = root.rstrip("/")
 
         # skip over known non-config directories
@@ -259,6 +258,7 @@ def walk_directories(config_dir, file_types, exclude_dirs, output_dir):
 
         # skip over user-specified non-config directories
         for dir in exclude_dirs:
+            dir = dir.rstrip("/")
             if os.path.abspath(dir) in [f"{os.path.abspath(root)}/{d}" for d in dirs]:
                 click.echo(f"Excluding directory: {os.path.abspath(dir)}")
                 dirs.remove(os.path.basename(dir))
