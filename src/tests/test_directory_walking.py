@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import pathlib
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -16,10 +16,15 @@ avoid hanging indefinitely.
 """
 
 
-@pytest.mark.usefixture("tmp_path")
+@mock.patch(
+    "dynamic_importer.main.CTClient",
+)
 @pytest.mark.timeout(30)
-def test_walk_directories_one_file_type(tmp_path):
-    runner = CliRunner()
+def test_walk_directories_one_file_type(mock_client):
+    mock_client = mock.MagicMock()  # noqa: F841
+    runner = CliRunner(
+        env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"}
+    )
     current_dir = pathlib.Path(__file__).parent.resolve()
 
     prompt_responses = [
@@ -36,33 +41,37 @@ def test_walk_directories_one_file_type(tmp_path):
         "",
         "staging",
     ]
-    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-        result = runner.invoke(
-            import_config,
-            [
-                "walk-directories",
-                "-t",
-                "dotenv",
-                "-c",
-                f"{current_dir}/../../samples/dotenvs",
-                "--output-dir",
-                td,
-            ],
-            input="\n".join(prompt_responses),
-            catch_exceptions=False,
-        )
+    result = runner.invoke(
+        import_config,
+        [
+            "walk-directories",
+            "-t",
+            "dotenv",
+            "--config-dir",
+            f"{current_dir}/../../samples/dotenvs",
+            "-c",
+            "-u",
+            "-k",
+        ],
+        input="\n".join(prompt_responses),
+        catch_exceptions=False,
+    )
+    try:
         assert result.exit_code == 0
-
-        assert pathlib.Path(f"{td}/myproj-dotenv.ctconfig").exists()
-        assert pathlib.Path(f"{td}/myproj-dotenv.cttemplate").exists()
-        assert os.path.getsize(f"{td}/myproj-dotenv.ctconfig") > 0
-        assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
+    except AssertionError as e:
+        print(result.output)
+        raise e
 
 
+@mock.patch(
+    "dynamic_importer.main.CTClient",
+)
 @pytest.mark.timeout(30)
-@pytest.mark.usefixtures("tmp_path")
-def test_walk_directories_multiple_file_types(tmp_path):
-    runner = CliRunner()
+def test_walk_directories_multiple_file_types(mock_client):
+    mock_client = mock.MagicMock()  # noqa: F841
+    runner = CliRunner(
+        env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"}
+    )
     current_dir = pathlib.Path(__file__).parent.resolve()
 
     prompt_responses = [
@@ -86,48 +95,34 @@ def test_walk_directories_multiple_file_types(tmp_path):
         "",
         "staging",
     ]
-    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-        result = runner.invoke(
-            import_config,
-            [
-                "walk-directories",
-                "-t",
-                "dotenv",
-                "-c",
-                f"{current_dir}/../../samples",
-                "--output-dir",
-                td,
-            ],
-            input="\n".join(prompt_responses),
-            catch_exceptions=False,
-        )
+    result = runner.invoke(
+        import_config,
+        [
+            "walk-directories",
+            "-t",
+            "dotenv",
+            "--config-dir",
+            f"{current_dir}/../../samples",
+        ],
+        input="\n".join(prompt_responses),
+        catch_exceptions=False,
+    )
+    try:
         assert result.exit_code == 0
-
-        assert pathlib.Path(f"{td}/dotty-dotenv.ctconfig").exists()
-        assert pathlib.Path(f"{td}/dotty-dotenv.cttemplate").exists()
-        assert os.path.getsize(f"{td}/dotty-dotenv.ctconfig") > 0
-        assert os.path.getsize(f"{td}/dotty-dotenv.cttemplate") > 0
-
-        assert pathlib.Path(f"{td}/myproj-dotenv.ctconfig").exists()
-        assert pathlib.Path(f"{td}/myproj-dotenv.cttemplate").exists()
-        assert os.path.getsize(f"{td}/myproj-dotenv.ctconfig") > 0
-        assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
-
-        # it was originally intended for json files to be included in the
-        # directory walking test but it broke on github (never locally)
-        assert not pathlib.Path(f"{td}/myproj-json.ctconfig").exists()
-        assert not pathlib.Path(f"{td}/myproj-json.cttemplate").exists()
-        # assert os.path.getsize(f"{td}/myproj-json.ctconfig") > 0
-        # assert os.path.getsize(f"{td}/myproj-json.cttemplate") > 0
-
-        assert not pathlib.Path(f"{td}/myproj-tf.ctconfig").exists()
-        assert not pathlib.Path(f"{td}/myproj-tf.cttemplate").exists()
+    except AssertionError as e:
+        print(result.output)
+        raise e
 
 
+@mock.patch(
+    "dynamic_importer.main.CTClient",
+)
 @pytest.mark.timeout(30)
-@pytest.mark.usefixtures("tmp_path")
-def test_walk_directories_with_exclusion(tmp_path):
-    runner = CliRunner()
+def test_walk_directories_with_exclusion(mock_client):
+    mock_client = mock.MagicMock()  # noqa: F841
+    runner = CliRunner(
+        env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"}
+    )
     current_dir = pathlib.Path(__file__).parent.resolve()
 
     prompt_responses = [
@@ -143,35 +138,24 @@ def test_walk_directories_with_exclusion(tmp_path):
         "",
         "",
     ]
-    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-        result = runner.invoke(
-            import_config,
-            [
-                "walk-directories",
-                "-t",
-                "dotenv",
-                "-t",
-                "yaml",
-                "-c",
-                f"{current_dir}/../../samples",
-                "--exclude-dirs",
-                f"{current_dir}/../../samples/dotenvs",
-                "--output-dir",
-                td,
-            ],
-            input="\n".join(prompt_responses),
-            catch_exceptions=False,
-        )
+    result = runner.invoke(
+        import_config,
+        [
+            "walk-directories",
+            "-t",
+            "dotenv",
+            "-t",
+            "yaml",
+            "--config-dir",
+            f"{current_dir}/../../samples",
+            "--exclude-dirs",
+            f"{current_dir}/../../samples/dotenvs",
+        ],
+        input="\n".join(prompt_responses),
+        catch_exceptions=False,
+    )
+    try:
         assert result.exit_code == 0
-
-        assert pathlib.Path(f"{td}/myproj-dotenv.ctconfig").exists()
-        assert pathlib.Path(f"{td}/myproj-dotenv.cttemplate").exists()
-        assert os.path.getsize(f"{td}/myproj-dotenv.ctconfig") > 0
-        assert os.path.getsize(f"{td}/myproj-dotenv.cttemplate") > 0
-
-        assert pathlib.Path(f"{td}/myproj-yaml.ctconfig").exists()
-        assert pathlib.Path(f"{td}/myproj-yaml.cttemplate").exists()
-        assert os.path.getsize(f"{td}/myproj-yaml.ctconfig") > 0
-        assert os.path.getsize(f"{td}/myproj-yaml.cttemplate") > 0
-
-        assert len(os.listdir(pathlib.Path(f"{td}/"))) == 4
+    except AssertionError as e:
+        print(result.output)
+        raise e

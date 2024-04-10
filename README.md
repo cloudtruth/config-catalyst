@@ -21,6 +21,13 @@ Extract parameters from your existing config and import to your CloudTruth organ
 # Usage
 This utility is distributed as a Docker container and can be pulled from cloudtruth/dynamic-importer on Docker Hub
 
+## Procesing a directory tree (the easy method)
+You can feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats. If you supply your CLOUDTRUTH_API_KEY via docker, the data will be uploaded to your CloudTruth account.
+
+```
+docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/dynamic-importer walk-directories --config-dir /app/samples/ -t dotenv -t json -t tf
+```
+
 ## Processing a single file
 An example of how to process a .env file
 ```
@@ -39,13 +46,6 @@ docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-c
     --env-values staging:/app/samples/dotenvs/.env.staging.sample \
     --env-values production:/app/samples/dotenvs/.env.prod.sample \
     --output-dir /app/files/
-```
-
-## Procesing a directory tree
-You may also feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats.
-
-```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer walk-directories -c /app/samples/ -t dotenv -t json -t tf -o walk_output/
 ```
 
 ## Editing template references
