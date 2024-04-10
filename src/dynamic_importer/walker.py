@@ -24,7 +24,6 @@ def walk_files(
 ) -> Dict[str, Dict[str, str]]:
     walked_files = {}
     last_project = None
-    click.echo(f"Processing files {files} in {root}")
     for file in files:
         file_path = f"{root}/{file}"
         name, file_extension = os.path.splitext(file)

@@ -135,7 +135,13 @@ def test_walk_directories_with_exclusion(mock_client):
         "",  # skipping json file
         "",  # skipping tfvars file
         "",  # skipping tf file
+        # something is different between local and github file order
+        # so we have to specify this extra prompt response and
+        # tack on a few extra empty lines
         "default",
+        "",
+        "",
+        "",
     ]
     result = runner.invoke(
         import_config,
@@ -150,7 +156,7 @@ def test_walk_directories_with_exclusion(mock_client):
             "--exclude-dirs",
             f"{current_dir}/../../samples/dotenvs",
         ],
-        input="\n".join(prompt_responses) + "\n" * 3,
+        input="\n".join(prompt_responses),
         catch_exceptions=False,
     )
     try:
