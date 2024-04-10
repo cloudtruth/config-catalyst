@@ -4,6 +4,7 @@ import json
 import os
 from collections import defaultdict
 from time import time
+from typing import Dict
 
 import click
 import urllib3
@@ -14,7 +15,7 @@ from dynamic_importer.processors import get_supported_formats
 from dynamic_importer.util import validate_env_values
 from dynamic_importer.walker import walk_files
 
-CREATE_DATA_MSG_INTERVAL = 10
+CREATE_DATA_MSG_INTERVAL = 20
 DIRS_TO_IGNORE = [
     ".git",
     ".github",
@@ -180,47 +181,60 @@ def create_data(data_file, template_file, project, k, c, u):
     api_key = os.environ.get("CLOUDTRUTH_API_KEY") or click.prompt(
         "Enter your CloudTruth API Key", hide_input=True
     )
-    if k:
-        urllib3.disable_warnings()
-    client = CTClient(api_key, skip_ssl_validation=k)
-    with open(data_file, "r") as fp:
-        config_data = json.load(fp)
-        total_params = len(config_data.values())
-        click.echo(f"Creating {total_params} parameters")
-        start_time = time()
-        i = 0
-        for raw_key, config_data in config_data.items():
-            i += 1
-            client.upsert_parameter(
-                project,
-                name=config_data["param_name"],
-                type_name=config_data["type"],
-                secret=config_data["secret"],
-                create_dependencies=c,
-            )
-            for env, value in config_data["values"].items():
-                client.upsert_value(
-                    project,
-                    config_data["param_name"],
-                    env,
-                    value,
-                    create_dependencies=c,
-                )
-            cur_time = time()
-            if cur_time - start_time > CREATE_DATA_MSG_INTERVAL:
-                click.echo(f"Created {i} parameters, {total_params - i} remaining")
-                start_time = time()
-    with open(template_file, "r") as fp:
-        template = fp.read()
-        click.echo(f"Uploading template: {template_file}")
-        client.upsert_template(project, name=template_file, body=template)
+    with open(data_file, "r") as dfp, open(template_file, "r") as tfp:
+        config_data = json.load(dfp)
+        template_data = tfp.read()
+    _create_data(
+        config_data, str(template_file), template_data, project, api_key, k, c, u
+    )
 
     click.echo("Data upload to CloudTruth complete!")
 
 
+def _create_data(
+    config_data: Dict,
+    template_name: str,
+    template_data: str,
+    project: str,
+    api_key: str,
+    k: bool,
+    c: bool,
+    u: bool,
+):
+    if k:
+        urllib3.disable_warnings()
+    client = CTClient(api_key, skip_ssl_validation=k)
+    total_params = len(config_data.values())
+    click.echo(f"Creating {total_params} parameters")
+    start_time = time()
+    i = 0
+    for _, config_data in config_data.items():
+        i += 1
+        client.upsert_parameter(
+            project,
+            name=config_data["param_name"],
+            type_name=config_data["type"],
+            secret=config_data["secret"],
+            create_dependencies=c,
+        )
+        for env, value in config_data["values"].items():
+            client.upsert_value(
+                project,
+                config_data["param_name"],
+                env,
+                value,
+                create_dependencies=c,
+            )
+        cur_time = time()
+        if cur_time - start_time > CREATE_DATA_MSG_INTERVAL:
+            click.echo(f"Created {i} parameters, {total_params - i} remaining")
+            start_time = time()
+    click.echo(f"Usploading template: {template_name}")
+    client.upsert_template(project, name=template_name, body=template_data)
+
+
 @import_config.command()
 @click.option(
-    "-c",
     "--config-dir",
     help="Full path to directory to walk and locate configs",
     required=True,
@@ -238,16 +252,16 @@ def create_data(data_file, template_file, project, k, c, u):
     help="Directory to exclude from walking. Can be specified multiple times",
     multiple=True,
 )
-@click.option(
-    "-o",
-    "--output-dir",
-    help="Directory to write processed output to. Default is current directory",
-    default=".",
-    required=False,
-)
-def walk_directories(config_dir, file_types, exclude_dirs, output_dir):
+@click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
+@click.option("-c", help="Create missing projects and enviroments", is_flag=True)
+@click.option("-u", help="Upsert values", is_flag=True)
+def walk_directories(config_dir, file_types, exclude_dirs, k, c, u):
+    """
+    Walks a directory, constructs templates and config data, and uploads to CloudTruth.
+    This is an interactive version of the process_configs and create_data commands. The
+    user will be prompted for project and environment names as files are walked.
+    """
     walked_files = {}
-    output_dir = output_dir.rstrip("/")
     for root, dirs, files in os.walk(config_dir):
         root = root.rstrip("/")
 
@@ -270,6 +284,8 @@ def walk_directories(config_dir, file_types, exclude_dirs, output_dir):
         project_files[v["project"]][v["type"]].append(
             {"path": v["path"], "environment": v["environment"]}
         )
+
+    processed_data = defaultdict(dict)
     for project, type_info in project_files.items():
         for file_type, file_meta in type_info.items():
             env_paths = {d["environment"]: d["path"] for d in file_meta}
@@ -279,17 +295,24 @@ def walk_directories(config_dir, file_types, exclude_dirs, output_dir):
             processor: BaseProcessor = processing_class(env_paths)
             template, config_data = processor.process()
 
-            template_out_file = f"{output_dir}/{project}-{file_type}.cttemplate"
-            config_out_file = f"{output_dir}/{project}-{file_type}.ctconfig"
+            template_name = f"{project}-{file_type}.cttemplate"
+            template_body = processor.generate_template()
 
-            click.echo(f"Writing template to: {template_out_file}")
-            with open(template_out_file, "w+") as fp:
-                template_body = processor.generate_template()
-                fp.write(template_body)
+            processed_data[project][template_name] = {
+                "template_body": template_body,
+                "config_data": config_data,
+            }
 
-            click.echo(f"Writing config data to: {config_out_file}")
-            with open(config_out_file, "w+") as fp:
-                json.dump(config_data, fp, indent=4)
+    api_key = os.environ.get("CLOUDTRUTH_API_KEY")
+    for project, ct_data in processed_data.items():
+        click.echo(f"Uploading data for {project}")
+        for template_name, template_data in ct_data.items():
+            template_body = template_data["template_body"]
+            config_data = template_data["config_data"]
+            _create_data(
+                config_data, template_name, template_body, project, api_key, k, c, u
+            )
+    click.echo("Data upload to CloudTruth complete!")
 
 
 if __name__ == "__main__":

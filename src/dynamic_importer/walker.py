@@ -20,7 +20,7 @@ EXTENSIONS_TO_FILE_TYPES = {
 
 
 def walk_files(
-    root: str, files: str, file_types: List[str]
+    root: str, files: List, file_types: List[str]
 ) -> Dict[str, Dict[str, str]]:
     walked_files = {}
     last_project = None
