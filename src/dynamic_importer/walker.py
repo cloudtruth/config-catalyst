@@ -20,10 +20,11 @@ EXTENSIONS_TO_FILE_TYPES = {
 
 
 def walk_files(
-    root: str, files: str, file_types: List[str]
+    root: str, files: List, file_types: List[str]
 ) -> Dict[str, Dict[str, str]]:
     walked_files = {}
     last_project = None
+    click.echo(f"Processing files {files} in {root}")
     for file in files:
         file_path = f"{root}/{file}"
         name, file_extension = os.path.splitext(file)

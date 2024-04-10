@@ -120,7 +120,9 @@ def test_walk_directories_multiple_file_types(mock_client):
 @pytest.mark.timeout(30)
 def test_walk_directories_with_exclusion(mock_client):
     mock_client = mock.MagicMock()  # noqa: F841
-    runner = CliRunner()
+    runner = CliRunner(
+        env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"},
+    )
     current_dir = pathlib.Path(__file__).parent.resolve()
 
     prompt_responses = [
@@ -147,7 +149,6 @@ def test_walk_directories_with_exclusion(mock_client):
             "--exclude-dirs",
             f"{current_dir}/../../samples/dotenvs",
         ],
-        env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"},
         input="\n".join(prompt_responses) + "\n" * 3,
         catch_exceptions=False,
     )
