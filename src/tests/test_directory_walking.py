@@ -135,6 +135,7 @@ def test_walk_directories_with_exclusion(mock_client):
         "",  # skipping json file
         "",  # skipping tfvars file
         "",  # skipping tf file
+        "default",
     ]
     result = runner.invoke(
         import_config,
