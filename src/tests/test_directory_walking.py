@@ -94,9 +94,9 @@ def test_walk_directories_multiple_file_types(mock_client):
         "",
         "",
         "staging",
+        "staging",
         "",
-        "",
-        "",
+        "staging",
         "",
     ]
     result = runner.invoke(
