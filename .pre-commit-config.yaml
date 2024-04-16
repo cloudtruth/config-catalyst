@@ -9,6 +9,7 @@ repos:
     -   id: check-yaml
     -   id: check-added-large-files
     -   id: debug-statements
+    -   id: fix-encoding-pragma
     -   id: name-tests-test
         exclude: ^src/tests/fixtures/
         args: ["--pytest-test-first"]
@@ -35,3 +36,8 @@ repos:
         additional_dependencies: [types-all]
         args: [--explicit-package-bases, --ignore-missing-imports]
         exclude: ^dynamic_importer/samples/|^files/
+-   repo: https://github.com/leoll2/copyright_notice_precommit
+    rev: 0.1.1
+    hooks:
+    -   id: copyright-notice
+        args: [--notice=copyright.txt]
