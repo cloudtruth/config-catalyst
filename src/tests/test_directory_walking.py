@@ -95,6 +95,9 @@ def test_walk_directories_multiple_file_types(mock_client):
         "",
         "staging",
         "",
+        "",
+        "",
+        "",
     ]
     result = runner.invoke(
         import_config,
