@@ -155,6 +155,8 @@ def test_walk_directories_with_exclusion(mock_client):
             f"{current_dir}/../../samples",
             "--exclude-dirs",
             f"{current_dir}/../../samples/dotenvs",
+            "--exclude-dirs",
+            f"{current_dir}/../../samples/advanced",
         ],
         input="\n".join(prompt_responses),
         catch_exceptions=False,

@@ -62,7 +62,9 @@ class BaseProcessor:
     def path_to_param_name(self, path):
         return path.replace("[", "_").replace("]", "").replace("'", "").lstrip("_")
 
-    def process(self, hints: Optional[Dict] = None):
+    def process(
+        self, hints: Optional[Dict] = None
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         self.extract_parameters_and_values(hints)
         return self.template, self.parameters_and_values
 

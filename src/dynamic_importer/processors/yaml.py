@@ -46,7 +46,7 @@ class YAMLProcessor(BaseProcessor):
                     # YAML strings use single quotes
                     reference = rf"'(\{{\{{\s+cloudtruth.parameters.{data['param_name']}\s+\}}\}})'"
                     template_body = sub(reference, r"\1", template_body)
-                default_value = data["values"].get("default")
+                default_value = data.get("values", {}).get("default")
                 if default_value and data["type"] == "string":
                     if default_value.startswith("'") and default_value.endswith("'"):
                         reference = rf"'(\{{\{{\s+cloudtruth.parameters.{data['param_name']}\s+\}}\}})'"
