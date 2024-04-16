@@ -9,6 +9,7 @@ from typing import Dict
 import click
 import urllib3
 from dynamic_importer.api.client import CTClient
+from dynamic_importer.api.types import coerce_types
 from dynamic_importer.processors import BaseProcessor
 from dynamic_importer.processors import get_processor_class
 from dynamic_importer.processors import get_supported_formats
@@ -210,21 +211,23 @@ def _create_data(
     i = 0
     for _, config_data in config_data.items():
         i += 1
+        type_name = coerce_types(config_data["type"])
         client.upsert_parameter(
             project,
             name=config_data["param_name"],
-            type_name=config_data["type"],
+            type_name=type_name,
             secret=config_data["secret"],
             create_dependencies=c,
         )
         for env, value in config_data["values"].items():
-            client.upsert_value(
-                project,
-                config_data["param_name"],
-                env,
-                value,
-                create_dependencies=c,
-            )
+            if value:
+                client.upsert_value(
+                    project,
+                    config_data["param_name"],
+                    env,
+                    value,
+                    create_dependencies=c,
+                )
         cur_time = time()
         if cur_time - start_time > CREATE_DATA_MSG_INTERVAL:
             click.echo(f"Created {i} parameters, {total_params - i} remaining")

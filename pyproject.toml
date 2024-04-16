@@ -9,6 +9,7 @@ dependencies = [
     "click",
     "python-dotenv @ git+https://github.com/cloudtruth/python-dotenv@feature/dump-dotenv",
     "python-hcl2",
+    "python-liquid",
     "pyyaml",
     "requests",
 ]
