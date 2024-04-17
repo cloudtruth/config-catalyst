@@ -259,4 +259,4 @@ def test_cli_process_configs_missing_outputdir():
 
     finally:
         if os.path.exists(dest_dir):
-            shutil.rmtree(f"{dest_dir}")
+            shutil.rmtree(dest_dir)
