@@ -22,13 +22,13 @@ jobs:
         file: Dockerfile.test
         platforms: linux/amd64
         push: false
-        tags: cloudtruth/dynamic-importer-test:latest
+        tags: dynamic-importer-test:latest
 
     - name: Test image
       uses: addnab/docker-run-action@v3
       with:
-        image: cloudtruth/dynamic-importer-test:latest
-        options: -v ${{ github.workspace }}:/app -e IS_GITHUB_ACTION=true
+        image: dynamic-importer-test:latest
+        options: -v ${{ github.workspace }}:/app
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1
