@@ -9,27 +9,21 @@ on:
 jobs:
   test:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Build test image
-      uses: docker/build-push-action@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v2
       with:
-        file: Dockerfile.test
-        load: true
-        platforms: linux/amd64
-        tags: dynamic-importer-test:latest
-
-    - name: Test image
-      uses: addnab/docker-run-action@v3
-      with:
-        image: dynamic-importer-test:latest
-        options: -v ${{ github.workspace }}:/app
-        run: pytest
+        python-version: 3.11
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+    - name: Test with pytest
+      run: |
+        pytest
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1
