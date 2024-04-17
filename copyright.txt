@@ -1,4 +1,0 @@
-#
-# Copyright (C) 2024 CloudTruth, Inc.
-# All Rights Reserved
-#

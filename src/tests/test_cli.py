@@ -1,6 +1,15 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2024 CloudTruth, Inc.
+# All Rights Reserved
+#
 from __future__ import annotations
 
+import os
 import pathlib
+import shutil
+import uuid
+from tempfile import gettempdir
 from unittest import mock
 from unittest import TestCase
 
@@ -224,3 +233,30 @@ def test_cli_import_data_json(mock_get, mock_post, tmp_path):
             catch_exceptions=False,
         )
         assert result.exit_code == 0
+
+
+def test_cli_process_configs_missing_outputdir():
+    runner = CliRunner()
+    current_dir = pathlib.Path(__file__).parent.resolve()
+    dest_dir = os.path.join(gettempdir(), f"testproj-{uuid.uuid4()}")
+    try:
+        result = runner.invoke(
+            import_config,
+            [
+                "process-configs",
+                "-t",
+                "dotenv",
+                "-p",
+                "testproj",
+                "--default-values",
+                f"{current_dir}/../../samples/.env.sample",
+                "--output-dir",
+                dest_dir,
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+
+    finally:
+        if os.path.exists(dest_dir):
+            shutil.rmtree(f"{dest_dir}")
