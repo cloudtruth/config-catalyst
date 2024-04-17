@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  IS_GITHUB_ACTION: true
-
 jobs:
   test:
 
@@ -16,17 +13,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build test image
+      uses: docker/build-push-action@v3
       with:
-        python-version: 3.11
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
-    - name: Test with pytest
-      run: |
-        pytest
+        file: Dockerfile.test
+        platforms: linux/amd64
+        push: false
+        tags: cloudtruth/dynamic-importer-test:latest
+
+    - name: Test image
+      uses: addnab/docker-run-action@v3
+      with:
+        image: docker://cloudtruth/dynamic-importer-test:latest
+        options: -v ${{ github.workspace }}:/app -e IS_GITHUB_ACTION=true
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1

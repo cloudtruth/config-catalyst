@@ -27,7 +27,7 @@ by running the docker container and executing the tests there.
 ```shell
 docker run -it --rm -v $PWD:/app cloudtruth/dynamic-importer:latest
 pip install -e .[dev]
-pytest
+IS_GITHUB_ACTION=true pytest
 ```
 """
 IS_GITHUB_ACTION = os.environ.get("IS_GITHUB_ACTION")
