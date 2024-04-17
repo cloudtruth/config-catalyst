@@ -29,6 +29,7 @@ jobs:
         image: dynamic-importer-test:latest
         options: -v ${{ github.workspace }}:/app
         run: |
+          cd /app
           ls -la
           pytest
 
