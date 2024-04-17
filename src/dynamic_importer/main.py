@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2024 CloudTruth, Inc.
+# All Rights Reserved
+#
 from __future__ import annotations
 
 import json
@@ -72,6 +77,10 @@ def process_configs(file_type, default_values, env_values, output_dir, project):
         raise click.UsageError(
             "At least one of --default-values and --env-values must be provided"
         )
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     input_files = {}
     if default_values:
         click.echo(f"Using default values from: {default_values}")
@@ -130,6 +139,7 @@ def regenerate_template(default_values, env_values, file_type, data_file):
         raise click.UsageError(
             "At least one of --default-values and --env-values must be provided"
         )
+
     output_dir = os.path.dirname(data_file) or "."
     input_files = {}
     if default_values:
