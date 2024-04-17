@@ -27,7 +27,7 @@ jobs:
     - name: Test image
       uses: addnab/docker-run-action@v3
       with:
-        image: docker://cloudtruth/dynamic-importer-test:latest
+        image: cloudtruth/dynamic-importer-test:latest
         options: -v ${{ github.workspace }}:/app -e IS_GITHUB_ACTION=true
 
     - name: Upload coverage reports to Codecov
