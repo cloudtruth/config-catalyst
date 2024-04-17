@@ -6,6 +6,7 @@ from typing import Optional
 
 import yaml
 from dynamic_importer.processors import BaseProcessor
+from liquid import Environment
 
 
 class YAMLProcessor(BaseProcessor):
@@ -22,6 +23,19 @@ class YAMLProcessor(BaseProcessor):
                     f"Attempt to decode {file_path} as YAML failed. Is it valid YAML?"
                 )
 
+    def guess_type(self, value):
+        base_type = super().guess_type(value)
+        if base_type == "string":
+            try:
+                template = Environment().from_string(value)
+                analysis = template.analyze()
+                if analysis.variables:
+                    return "template"
+            except Exception:
+                pass
+
+        return base_type
+
     def encode_template_references(
         self, template: Dict, config_data: Optional[Dict]
     ) -> str:
@@ -32,5 +46,10 @@ class YAMLProcessor(BaseProcessor):
                     # YAML strings use single quotes
                     reference = rf"'(\{{\{{\s+cloudtruth.parameters.{data['param_name']}\s+\}}\}})'"
                     template_body = sub(reference, r"\1", template_body)
+                default_value = data.get("values", {}).get("default")
+                if default_value and data["type"] == "string":
+                    if default_value.startswith("'") and default_value.endswith("'"):
+                        reference = rf"'(\{{\{{\s+cloudtruth.parameters.{data['param_name']}\s+\}}\}})'"
+                        template_body = sub(reference, r'"\1"', template_body)
 
         return template_body

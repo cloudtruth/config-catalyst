@@ -50,7 +50,10 @@ class BaseProcessor:
         NOTE: CloudTruth only supports int, bool, and str types.
               No attempt is made to determine custom types.
         """
-        if isinstance(value, bool):
+        if value is None:
+            # We don't want to coerce null to a string
+            return "null"
+        elif isinstance(value, bool):
             return "boolean"
         elif isinstance(value, int):
             return "integer"
@@ -59,7 +62,9 @@ class BaseProcessor:
     def path_to_param_name(self, path):
         return path.replace("[", "_").replace("]", "").replace("'", "").lstrip("_")
 
-    def process(self, hints: Optional[Dict] = None):
+    def process(
+        self, hints: Optional[Dict] = None
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         self.extract_parameters_and_values(hints)
         return self.template, self.parameters_and_values
 

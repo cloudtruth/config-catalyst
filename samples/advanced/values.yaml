@@ -1,0 +1,182 @@
+# Default values for kubetruth.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: cloudtruth/kubetruth
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  clusterInstall: true
+  roleRules:
+    - apiGroups: [ "" ]
+      resources: [ "configmaps" ]
+      verbs: [ "*" ]
+    - apiGroups: [ "" ]
+      resources: [ "secrets" ]
+      verbs: [ "*" ]
+    - apiGroups: [ "" ]
+      resources: [ "namespaces" ]
+      verbs: [ "get", "list", "create" ]
+    - apiGroups: [ "kubetruth.cloudtruth.com" ]
+      resources: [ "projectmappings" ]
+      verbs: [ "*" ]
+  additionalRoleRules: []
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+appSettings:
+  apiKey:
+  apiUrl:
+  pollingInterval:
+  debug: false
+  async: true
+  concurrency:
+
+# If secret.create == false, secret generation is left to the user
+# outside of the chart, and a name should be specified
+# See templates/secret.yaml for expected values
+secret:
+  create: true
+  name: ""
+
+# Create instances of the ProjectMapping CRD.  A single mapping with scope=root
+# is required (named root below).  You can also add multiple override mappings
+# (scope=override).  Any properties not overriden are inherited from the root
+# mapping.  An example override mapping could look like:
+#
+#  my-override-name:
+#    scope: "override"
+#    project_selector: "common"
+#    skip: true
+#
+projectMappings:
+  root:
+    scope: "root"
+    environment: "default"
+    project_selector: "^(?!kubetruth)"
+    context:
+      resource_name: "{{ project | dns_safe }}"
+      resource_namespace: "{{ mapping_namespace }}"
+      skip_secrets: false
+    resource_templates:
+      configmap: |
+        {%- if parameters.size > 0 %}
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: "{{ context.resource_name }}"
+          namespace: "{{ context.resource_namespace }}"
+          labels:
+            version: "{{ parameters | sort | to_json | sha256 | slice: 0, 7 }}"
+        data:
+          {%- for parameter in parameters %}
+          {{ parameter[0] | key_safe | stringify }}: {{ parameter[1] | stringify }}
+          {%- endfor %}
+        {%- endif %}
+
+      secret: |
+        {%- unless context.skip_secrets or secrets.size == 0 %}
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: "{{ context.resource_name }}"
+          namespace: "{{ context.resource_namespace }}"
+          labels:
+            version: "{{ secrets | sort | to_json | sha256 | slice: 0, 7 }}"
+        data:
+          {%- for secret in secrets %}
+          {{ secret[0] | key_safe | stringify }}: {{ secret[1] | encode64 | stringify }}
+          {%- endfor %}
+        {%- endunless %}
+  webcontrol:
+    scope: "override"
+    project_selector: "^kubetruth$"
+    skip: true
+    suppress_namespace_inheritance: true
+    resource_templates:
+      # Creates kubetruth CRDs from templates in the 'kubetruth' project in CloudTruth
+      # Templates are treated as a yaml hash for the spec section of the CRD and optionally with a namespace in its name like 'myNamespace/myProjectMappingName'
+      # You can fully specify a template (complete k8s yaml) by indicating it is raw with the directive "#~ format: raw" as the first line in the template
+      crds: |
+        {%- for template in templates.names %}
+
+        {%- assign is_raw_template = templates[template] | re_contains: "^\s*#\~\s*format:\s*raw" %}
+        {%- if is_raw_template %}
+
+        {{ templates[template] }}
+
+        {%- else %}
+
+        {%- assign name_parts = template | split: "/" %}
+        {%- assign name = name_parts | last %}
+
+        apiVersion: kubetruth.cloudtruth.com/v1
+        kind: ProjectMapping
+        metadata:
+          name: "{{ name }}"
+          {%- if name_parts.size > 1 %}
+          namespace: "{{ name_parts | first }}"
+          {%- endif %}
+
+        spec: {{ templates[template] | nindent: 2 }}
+
+        {%- endif %}
+
+        {% unless forloop.last %}---{% endunless %}
+        {%- endfor %}

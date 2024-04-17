@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import os
 import pathlib
 from unittest import mock
 
@@ -13,7 +15,22 @@ for every file in the supplied directory to walk. Therefore, the tests
 MUST supply input for the prompts. If you write a test that supplies
 prompt input, please use the `@pytest.mark.timeout(30)` decorator to
 avoid hanging indefinitely.
+
+This gets even more confusing when running the tests in GitHub Actions.
+Somehow, the order of the files processed differs between local and
+GitHub. Therefore, you may have to re-order the prompt responses depending
+on the running environment.
+
+If you run into this issue, you can simulate the GitHub Actions environment
+by running the docker container and executing the tests there.
+
+```shell
+docker run -it --rm -v $PWD:/app cloudtruth/dynamic-importer:latest
+pip install -e .[dev]
+IS_GITHUB_ACTION=true pytest
+```
 """
+IS_GITHUB_ACTION = os.environ.get("IS_GITHUB_ACTION")
 
 
 @mock.patch(
@@ -74,7 +91,7 @@ def test_walk_directories_multiple_file_types(mock_client):
     )
     current_dir = pathlib.Path(__file__).parent.resolve()
 
-    prompt_responses = [
+    local_prompt_responses = [
         "",  # processing dotenv file
         "myproj",
         "default",
@@ -94,7 +111,32 @@ def test_walk_directories_multiple_file_types(mock_client):
         "",
         "",
         "staging",
+        "",  # skipping advanced/yaml
     ]
+
+    github_prompt_responses = [
+        "",  # processing dotenv file
+        "myproj",
+        "default",
+        "",  # skipping yaml file
+        "",  # skipping json file
+        "",  # skipping tfvars file
+        "",  # skipping tf file
+        "",  # skipping advanced/yaml
+        "",  # processing dotenv dir
+        "dotty",
+        "default",
+        "",
+        "",
+        "development",
+        "",
+        "",
+        "production",
+        "",
+        "",
+        "staging",
+    ]
+
     result = runner.invoke(
         import_config,
         [
@@ -104,7 +146,9 @@ def test_walk_directories_multiple_file_types(mock_client):
             "--config-dir",
             f"{current_dir}/../../samples",
         ],
-        input="\n".join(prompt_responses),
+        input="\n".join(
+            github_prompt_responses if IS_GITHUB_ACTION else local_prompt_responses
+        ),
         catch_exceptions=False,
     )
     try:
@@ -155,6 +199,8 @@ def test_walk_directories_with_exclusion(mock_client):
             f"{current_dir}/../../samples",
             "--exclude-dirs",
             f"{current_dir}/../../samples/dotenvs",
+            "--exclude-dirs",
+            f"{current_dir}/../../samples/advanced",
         ],
         input="\n".join(prompt_responses),
         catch_exceptions=False,

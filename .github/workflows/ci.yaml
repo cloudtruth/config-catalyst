@@ -6,10 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  IS_GITHUB_ACTION: true
+
 jobs:
   test:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
