@@ -35,9 +35,11 @@ repos:
     -   id: mypy
         additional_dependencies: [types-all]
         args: [--explicit-package-bases, --ignore-missing-imports]
-        exclude: ^dynamic_importer/samples/|^files/
+        exclude: ^samples/|^files/
 -   repo: https://github.com/sbrunner/hooks
     rev: 1.0.0
     hooks:
     -   id: copyright
+        exclude: (^samples/|^files/|.*\.yaml|Dockerfile.*)
     -   id: copyright-required
+        exclude: (^samples/|^files/|.*\.yaml|Dockerfile.*)
