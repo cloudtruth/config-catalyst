@@ -242,7 +242,7 @@ def _create_data(
         if cur_time - start_time > CREATE_DATA_MSG_INTERVAL:
             click.echo(f"Created {i} parameters, {total_params - i} remaining")
             start_time = time()
-    click.echo(f"Usploading template: {template_name}")
+    click.echo(f"Uploading template: {template_name}")
     client.upsert_template(project, name=template_name, body=template_data)
 
 
