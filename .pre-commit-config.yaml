@@ -40,6 +40,6 @@ repos:
     rev: 1.0.0
     hooks:
     -   id: copyright
-        exclude: (^samples/|^files/|.*\.yaml|Dockerfile.*)
+        exclude: (^samples/|^files/|.*\.yaml|Dockerfile.*|LICENSE|.*\.md|\.gitignore|.*\.toml|\.flake8)
     -   id: copyright-required
-        exclude: (^samples/|^files/|.*\.yaml|Dockerfile.*)
+        exclude: (^samples/|^files/|.*\.yaml|Dockerfile.*|LICENSE|.*\.md|\.gitignore|.*\.toml|\.flake8)
