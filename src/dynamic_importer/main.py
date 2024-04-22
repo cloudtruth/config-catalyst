@@ -215,6 +215,11 @@ def _create_data(
     if k:
         urllib3.disable_warnings()
     client = CTClient(api_key, skip_ssl_validation=k)
+
+    if "/" in project:
+        parent_project, project = project.split("/", 1)
+        client.upsert_project(project, parent=parent_project, create_dependencies=c)
+
     total_params = len(config_data.values())
     click.echo(f"Creating {total_params} parameters")
     start_time = time()
@@ -265,10 +270,15 @@ def _create_data(
     help="Directory to exclude from walking. Can be specified multiple times",
     multiple=True,
 )
+@click.option(
+    "--create-hierarchy",
+    help="If specified, project hierarchy will be created based on directory hierarchy",
+    is_flag=True,
+)
 @click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
 @click.option("-c", help="Create missing projects and enviroments", is_flag=True)
 @click.option("-u", help="Upsert values", is_flag=True)
-def walk_directories(config_dir, file_types, exclude_dirs, k, c, u):
+def walk_directories(config_dir, file_types, exclude_dirs, create_hierarchy, k, c, u):
     """
     Walks a directory, constructs templates and config data, and uploads to CloudTruth.
     This is an interactive version of the process_configs and create_data commands. The
@@ -290,7 +300,7 @@ def walk_directories(config_dir, file_types, exclude_dirs, k, c, u):
                 click.echo(f"Excluding directory: {os.path.abspath(dir)}")
                 dirs.remove(os.path.basename(dir))
 
-        walked_files.update(walk_files(root, files, file_types))
+        walked_files.update(walk_files(root, files, file_types, create_hierarchy))
 
     project_files = defaultdict(lambda: defaultdict(list))
     for v in walked_files.values():

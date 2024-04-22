@@ -49,14 +49,14 @@ class CTClient:
         success_code = SUCCESS_CODES[method.lower()]
         if resp.status_code != success_code:
             raise RuntimeError(
-                f"Request to {self.base_url}{path} failed with status code {resp.status_code}: {resp.text}"
+                f"{method} Request to {self.base_url}{path} failed with status code {resp.status_code}: {resp.text}"
             )
 
         return resp.json()
 
-    def get_project_id(self, project_name: str) -> str:
+    def get_project(self, project_name: str) -> Dict:
         if project_name in self.cache["projects"].keys():
-            return self.cache["projects"][project_name]["id"]
+            return self.cache["parameters"][project_name]
         projects = self._make_request("projects", "GET")
         for project in projects["results"]:
             self.cache["projects"][project["name"]] = {
@@ -65,9 +65,21 @@ class CTClient:
             }
 
         try:
-            return self.cache["projects"][project_name]["id"]
+            return self.cache["projects"][project_name]
         except KeyError:
             raise ResourceNotFoundError(f"Project {project_name} not found")
+
+    def get_project_id(self, project_name: str) -> str:
+        if project_name in self.cache["projects"].keys():
+            return self.cache["projects"][project_name]["id"]
+
+        return self.get_project(project_name)["id"]
+
+    def get_project_url(self, project_name: str) -> str:
+        if project_name in self.cache["projects"].keys():
+            return self.cache["projects"][project_name]["url"]
+
+        return self.get_project(project_name)["url"]
 
     def _populate_environment_cache(self) -> None:
         environments = self._make_request("environments", "GET")
@@ -101,7 +113,11 @@ class CTClient:
         if f"{project_name}/{parameter_name}" in self.cache["parameters"].keys():
             return self.cache["parameters"][f"{project_name}/{parameter_name}"]
         project_id = self.get_project_id(project_name)
-        parameters = self._make_request(f"projects/{project_id}/parameters", "GET")
+        parameters = self._make_request(
+            f"projects/{project_id}/parameters",
+            "GET",
+            params={"immediate_parameters": True},
+        )
         for parameter in parameters["results"]:
             self.cache["parameters"][f"{project_name}/{parameter['name']}"] = {
                 "url": parameter["url"],
@@ -115,17 +131,8 @@ class CTClient:
     def get_parameter_id(self, project_name: str, parameter_name: str) -> str:
         if f"{project_name}/{parameter_name}" in self.cache["parameters"].keys():
             return self.cache["parameters"][f"{project_name}/{parameter_name}"]["id"]
-        project_id = self.get_project_id(project_name)
-        parameters = self._make_request(f"projects/{project_id}/parameters", "GET")
-        for parameter in parameters["results"]:
-            self.cache["parameters"][f"{project_name}/{parameter['name']}"] = {
-                "url": parameter["url"],
-                "id": parameter["id"],
-            }
-        try:
-            return self.cache["parameters"][f"{project_name}/{parameter_name}"]["id"]
-        except KeyError:
-            raise ResourceNotFoundError(f"Parameter {parameter_name} not found")
+
+        return self.get_parameter(project_name, parameter_name)["id"]
 
     def get_template(self, project_name: str, template_name: str) -> Dict:
         cache_key = f"{project_name}/{template_name}"
@@ -195,11 +202,16 @@ class CTClient:
         except KeyError:
             raise ResourceNotFoundError(f"Type {type_name} not found")
 
-    def create_project(self, name: str, description: str = "") -> Dict:
-        resp = self._make_request(
-            "projects", "POST", data={"name": name, "description": description}
-        )
-        self.cache["projects"][resp["name"]] = {"id": resp["id"], "name": resp["name"]}
+    def create_project(
+        self, name: str, description: str = "", parent: Optional[str] = None
+    ) -> Dict:
+        req_data = {"name": name, "description": description}
+        if parent:
+            parent_url = self.get_project_url(parent)
+            req_data["depends_on"] = parent_url
+
+        resp = self._make_request("projects", "POST", data=req_data)
+        self.cache["projects"][resp["name"]] = {"id": resp["id"], "url": resp["url"]}
         return resp
 
     def create_environment(
@@ -357,6 +369,20 @@ class CTClient:
             "PATCH",
             data={"name": name, "body": body},
         )
+
+    def upsert_project(
+        self,
+        name: str,
+        description: str = "",
+        parent: Optional[str] = None,
+        create_dependencies: bool = False,
+    ) -> Dict:
+        try:
+            return self.get_project(name)
+        except ResourceNotFoundError:
+            if not create_dependencies:
+                raise
+            return self.create_project(name, description, parent)
 
     def upsert_parameter(
         self,

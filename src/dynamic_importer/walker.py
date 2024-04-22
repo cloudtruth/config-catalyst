@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 from typing import Dict
 from typing import List
+from typing import Optional
 
 import click
 from dynamic_importer.processors import get_supported_formats
@@ -25,10 +26,13 @@ EXTENSIONS_TO_FILE_TYPES = {
 
 
 def walk_files(
-    root: str, files: List, file_types: List[str]
+    root: str,
+    files: List,
+    file_types: List[str],
+    create_hierarchy: Optional[bool] = False,
 ) -> Dict[str, Dict[str, str]]:
     walked_files = {}
-    last_project = None
+    last_project = root if create_hierarchy else root.split("/")[-1]
     for file in files:
         file_path = f"{root}/{file}"
         name, file_extension = os.path.splitext(file)
