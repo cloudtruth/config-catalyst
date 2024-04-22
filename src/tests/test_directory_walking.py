@@ -29,7 +29,7 @@ If you run into this issue, you can simulate the GitHub Actions environment
 by running the docker container and executing the tests there.
 
 ```shell
-docker run -it --rm -v $PWD:/app cloudtruth/dynamic-importer:latest
+docker run -it --entrypoint /bin/bash --rm -v $PWD:/app cloudtruth/dynamic-importer:latest
 pip install -e .[dev]
 IS_GITHUB_ACTION=true pytest
 ```
@@ -205,6 +205,64 @@ def test_walk_directories_with_exclusion(mock_client):
             f"{current_dir}/../../samples/dotenvs",
             "--exclude-dirs",
             f"{current_dir}/../../samples/advanced",
+        ],
+        input="\n".join(prompt_responses),
+        catch_exceptions=False,
+    )
+    try:
+        assert result.exit_code == 0
+    except AssertionError as e:
+        print(result.output)
+        raise e
+
+
+@mock.patch(
+    "dynamic_importer.main.CTClient",
+)
+@pytest.mark.timeout(30)
+def test_walk_directories_with_inheritance(mock_client):
+    mock_client = mock.MagicMock()  # noqa: F841
+    runner = CliRunner(
+        env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"},
+    )
+    current_dir = pathlib.Path(__file__).parent.resolve()
+
+    prompt_responses = [
+        "",  # processing dotenv file
+        "",  # accept default project
+        "default",
+        "",  # processing yaml file
+        "",  # using myproj default
+        "default",  # use default environment
+        "",  # skipping json file
+        "",  # skipping tfvars file
+        "",  # skipping tf file
+        "",  # enter samples/dotenvs
+        "",  # accept default project
+        "default",  # use default environment
+        "",  # processing dotenv file
+        "",  # accept default project
+        "development",  # use development environment
+        "",  # processing dotenv file
+        "",  # accept default project
+        "production",  # use production environment
+        "",  # processing dotenv file
+        "",  # accept default project
+        "staging",  # use staging environment
+        "",  # enter samples/advanced
+        "",  # accept default project
+        "default",  # use default environment
+    ]
+    result = runner.invoke(
+        import_config,
+        [
+            "walk-directories",
+            "-t",
+            "yaml",
+            "--create-hierarchy",
+            "-c",
+            "--config-dir",
+            f"{current_dir}/../../samples",
         ],
         input="\n".join(prompt_responses),
         catch_exceptions=False,

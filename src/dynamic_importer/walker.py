@@ -26,12 +26,13 @@ EXTENSIONS_TO_FILE_TYPES = {
 
 
 def walk_files(
-    root: str, files: List, file_types: List[str], last_dir: Optional[str] = None
+    root: str,
+    files: List,
+    file_types: List[str],
+    create_hierarchy: Optional[bool] = False,
 ) -> Dict[str, Dict[str, str]]:
     walked_files = {}
-    last_project = None
-    if last_dir:
-        last_project = f"{last_dir}/{root}"
+    last_project = root if create_hierarchy else root.split("/")[-1]
     for file in files:
         file_path = f"{root}/{file}"
         name, file_extension = os.path.splitext(file)

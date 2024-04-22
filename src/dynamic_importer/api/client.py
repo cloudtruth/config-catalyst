@@ -49,7 +49,7 @@ class CTClient:
         success_code = SUCCESS_CODES[method.lower()]
         if resp.status_code != success_code:
             raise RuntimeError(
-                f"Request to {self.base_url}{path} failed with status code {resp.status_code}: {resp.text}"
+                f"{method} Request to {self.base_url}{path} failed with status code {resp.status_code}: {resp.text}"
             )
 
         return resp.json()
@@ -113,7 +113,11 @@ class CTClient:
         if f"{project_name}/{parameter_name}" in self.cache["parameters"].keys():
             return self.cache["parameters"][f"{project_name}/{parameter_name}"]
         project_id = self.get_project_id(project_name)
-        parameters = self._make_request(f"projects/{project_id}/parameters", "GET")
+        parameters = self._make_request(
+            f"projects/{project_id}/parameters",
+            "GET",
+            params={"immediate_parameters": True},
+        )
         for parameter in parameters["results"]:
             self.cache["parameters"][f"{project_name}/{parameter['name']}"] = {
                 "url": parameter["url"],
@@ -204,10 +208,10 @@ class CTClient:
         req_data = {"name": name, "description": description}
         if parent:
             parent_url = self.get_project_url(parent)
-            req_data["parent"] = parent_url
+            req_data["depends_on"] = parent_url
 
         resp = self._make_request("projects", "POST", data=req_data)
-        self.cache["projects"][resp["name"]] = {"id": resp["id"], "name": resp["name"]}
+        self.cache["projects"][resp["name"]] = {"id": resp["id"], "url": resp["url"]}
         return resp
 
     def create_environment(

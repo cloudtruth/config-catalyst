@@ -285,7 +285,6 @@ def walk_directories(config_dir, file_types, exclude_dirs, create_hierarchy, k, 
     user will be prompted for project and environment names as files are walked.
     """
     walked_files = {}
-    last_dir = None
     for root, dirs, files in os.walk(config_dir):
         root = root.rstrip("/")
 
@@ -301,9 +300,7 @@ def walk_directories(config_dir, file_types, exclude_dirs, create_hierarchy, k, 
                 click.echo(f"Excluding directory: {os.path.abspath(dir)}")
                 dirs.remove(os.path.basename(dir))
 
-        walked_files.update(walk_files(root, files, file_types, last_dir))
-        if create_hierarchy:
-            last_dir = root
+        walked_files.update(walk_files(root, files, file_types, create_hierarchy))
 
     project_files = defaultdict(lambda: defaultdict(list))
     for v in walked_files.values():
