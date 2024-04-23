@@ -13,7 +13,6 @@ from typing import Dict
 
 import click
 import urllib3
-from dynamic_importer.api.client import CLOUDTRUTH_API_HOST
 from dynamic_importer.api.client import CTClient
 from dynamic_importer.api.types import coerce_types
 from dynamic_importer.processors import BaseProcessor
@@ -211,7 +210,7 @@ def _create_data(
     if not api_key:
         raise click.UsageError(
             "CLOUDTRUTH_API_KEY environment variable is required. "
-            f"Please visit https://{CLOUDTRUTH_API_HOST}/organization/api to generate one."
+            "Please visit https://app.cloudtruth.io/organization/api to generate one."
         )
     if k:
         urllib3.disable_warnings()

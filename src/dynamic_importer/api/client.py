@@ -15,12 +15,11 @@ from dynamic_importer.api.exceptions import ResourceNotFoundError
 
 DEFAULT_API_HOST = "api.cloudtruth.io"
 SUCCESS_CODES = {"get": 200, "post": 201, "patch": 200, "put": 200, "delete": 204}
-CLOUDTRUTH_API_HOST = os.environ.get("CLOUDTRUTH_API_HOST", DEFAULT_API_HOST)
 
 
 class CTClient:
     def __init__(self, api_key, skip_ssl_validation=False):
-        api_host = CLOUDTRUTH_API_HOST
+        api_host = os.environ.get("CLOUDTRUTH_API_HOST", DEFAULT_API_HOST)
         self.base_url = f"https://{api_host}/api/v1"
         self.api_key = api_key
         self.headers = {"Authorization": f"Api-Key {self.api_key}"}
