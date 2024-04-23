@@ -10,6 +10,7 @@ import pathlib
 import shutil
 import uuid
 from tempfile import gettempdir
+from tempfile import NamedTemporaryFile
 from unittest import mock
 from unittest import TestCase
 
@@ -55,6 +56,39 @@ Options:
             "Error: At least one of --default-values and --env-values must be provided",
             result.output,
         )
+
+
+@pytest.mark.usefixtures("tmp_path")
+def test_create_data_no_api_key(tmp_path):
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with (
+            NamedTemporaryFile(dir=td, delete=False) as tmp_data,
+            NamedTemporaryFile(dir=td, delete=False) as tmp_template,
+        ):
+            tmp_data.write(b"{}")
+            tmp_data.close()
+            tmp_template.write(b"{}")
+            tmp_template.close()
+
+            result = runner.invoke(
+                import_config,
+                [
+                    "create-data",
+                    "-d",
+                    f"{tmp_data.name}",
+                    "-m",
+                    f"{tmp_template.name}",
+                    "-p",
+                    "testproj",
+                ],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 2
+            assert (
+                "Error: CLOUDTRUTH_API_KEY environment variable is required."
+                in result.output
+            )
 
 
 @pytest.mark.usefixtures("tmp_path")
