@@ -189,15 +189,10 @@ def regenerate_template(default_values, env_values, file_type, data_file):
 @click.option("-c", help="Create missing projects and enviroments", is_flag=True)
 @click.option("-u", help="Upsert values", is_flag=True)
 def create_data(data_file, template_file, project, k, c, u):
-    api_key = os.environ.get("CLOUDTRUTH_API_KEY") or click.prompt(
-        "Enter your CloudTruth API Key", hide_input=True
-    )
     with open(data_file, "r") as dfp, open(template_file, "r") as tfp:
         config_data = json.load(dfp)
         template_data = tfp.read()
-    _create_data(
-        config_data, str(template_file), template_data, project, api_key, k, c, u
-    )
+    _create_data(config_data, str(template_file), template_data, project, k, c, u)
 
     click.echo("Data upload to CloudTruth complete!")
 
@@ -207,11 +202,16 @@ def _create_data(
     template_name: str,
     template_data: str,
     project: str,
-    api_key: str,
     k: bool,
     c: bool,
     u: bool,
 ):
+    api_key = os.environ.get("CLOUDTRUTH_API_KEY")
+    if not api_key:
+        raise click.UsageError(
+            "CLOUDTRUTH_API_KEY environment variable is required. "
+            "Please visit https://app.cloudtruth.io/organization/api to generate one."
+        )
     if k:
         urllib3.disable_warnings()
     client = CTClient(api_key, skip_ssl_validation=k)
@@ -326,15 +326,12 @@ def walk_directories(config_dir, file_types, exclude_dirs, create_hierarchy, k, 
                 "config_data": config_data,
             }
 
-    api_key = os.environ.get("CLOUDTRUTH_API_KEY")
     for project, ct_data in processed_data.items():
         click.echo(f"Uploading data for {project}")
         for template_name, template_data in ct_data.items():
             template_body = template_data["template_body"]
             config_data = template_data["config_data"]
-            _create_data(
-                config_data, template_name, template_body, project, api_key, k, c, u
-            )
+            _create_data(config_data, template_name, template_body, project, k, c, u)
     click.echo("Data upload to CloudTruth complete!")
 
 

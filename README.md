@@ -56,13 +56,11 @@ docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer regenerat
 ```
 
 ## Uploading data to CloudTruth
-Once you are comfortable with your template and associated data, you're ready to upload to CloudTruth!
+Once you are comfortable with your template and associated data, you're ready to upload to CloudTruth! Be sure to provide your CloudTruth API Key as an environment variable
 
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer create-data --data-file /app/files/.env.ctconfig -m /app/files/.env.cttemplate -p "Meaningful Project Name"
+docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/dynamic-importer create-data --data-file /app/files/.env.ctconfig -m /app/files/.env.cttemplate -p "Meaningful Project Name"
 ```
-
-By default, the utility will prompt for your CloudTruth API Key. You may also provide it via `-e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!"`
 
 # Development
 1. Set up a virtualenv
