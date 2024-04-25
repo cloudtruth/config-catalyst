@@ -17,6 +17,7 @@ from unittest import TestCase
 import pytest
 from click.testing import CliRunner
 from dynamic_importer.main import import_config
+from dynamic_importer.processors import get_processor_class
 from tests.fixtures.requests import mocked_requests_localhost_get
 from tests.fixtures.requests import mocked_requests_localhost_post
 
@@ -45,6 +46,22 @@ Options:
             "Error: At least one of --default-values and --env-values must be provided",
             result.output,
         )
+
+    def test_process_configs_invalid_type(self):
+        runner = CliRunner()
+        result = runner.invoke(
+            import_config, ["process-configs", "-t", "spam", "-p", "testproj"]
+        )
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn(
+            "Error: Invalid value for '-t' / '--file-type': "
+            "'spam' is not one of 'yaml', 'dotenv', 'json', 'tf', 'tfvars'",
+            result.output,
+        )
+
+    def test_get_processor_class_invalid_type(self):
+        with pytest.raises(ValueError):
+            get_processor_class("spam")
 
     def test_regenerate_template_no_args(self):
         runner = CliRunner()
