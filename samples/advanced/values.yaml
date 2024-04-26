@@ -81,7 +81,7 @@ tolerations: []
 affinity: {}
 
 appSettings:
-  apiKey:
+  apiKey: "abc123-sodapop48fizzybusiness0202"
   apiUrl:
   pollingInterval:
   debug: false

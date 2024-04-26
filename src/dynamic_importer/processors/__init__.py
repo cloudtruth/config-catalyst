@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib
 import os
 import pkgutil
+import re
 from copy import deepcopy
 from typing import Any
 from typing import Dict
@@ -16,15 +17,22 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
+RE_WORDS = "(pas+wo?r?d|pass(phrase)?|pwd|token|secrete?|api(\\W|_)?key)"
+RE_CANDIDATES = re.compile("(^{0}$|_{0}_|^{0}_|_{0}$)".format(RE_WORDS), re.IGNORECASE)
+
 
 def get_processor_class(file_type: str) -> BaseProcessor:
     ft_lower = file_type.lower()
-    if processor_module := importlib.import_module(
-        f"dynamic_importer.processors.{ft_lower}"
-    ):
-        for subclass in BaseProcessor.__subclasses__():
-            if subclass.__name__.lower() == f"{ft_lower}processor":
-                return getattr(processor_module, subclass.__name__)
+    try:
+        processor_module = importlib.import_module(
+            f"dynamic_importer.processors.{ft_lower}"
+        )
+    except ModuleNotFoundError:
+        raise ValueError(f"No processor found for file type: {file_type}")
+
+    for subclass in BaseProcessor.__subclasses__():
+        if subclass.__name__.lower() == f"{ft_lower}processor":
+            return getattr(processor_module, subclass.__name__)
 
     raise ValueError(f"No processor found for file type: {file_type}")
 
@@ -48,6 +56,9 @@ class BaseProcessor:
 
     def __init__(self, env_values: Dict) -> None:
         raise NotImplementedError("Subclasses must implement the __init__ method")
+
+    def is_param_secret(self, param_name: str) -> bool:
+        return bool(RE_CANDIDATES.search(param_name))
 
     def guess_type(self, value):
         """
@@ -138,7 +149,7 @@ class BaseProcessor:
                         "values": {env: obj},
                         "param_name": param_name,
                         "type": obj_type,
-                        "secret": False,
+                        "secret": self.is_param_secret(param_name),
                     }
                 }
 
