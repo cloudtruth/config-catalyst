@@ -9,6 +9,8 @@ import os
 
 from click import Option
 from click import UsageError
+from ruamel.yaml import YAML
+from ruamel.yaml.compat import StringIO
 
 
 def validate_env_values(ctx, param, value):
@@ -65,3 +67,25 @@ class RequiredDependentOption(Option):
             )
 
         return super().handle_parse_result(ctx, opts, args)
+
+
+class StringableYAML(YAML):
+    """
+    ruamel.yaml has strong opinions about dumping to a string but provides
+    an example of how to do it "if you really need to have it (or think you do)"
+
+    Since we do some post-processing on the dumped string before writing it
+    to disk, we DO, in fact, need to have it.
+
+    See also:
+    https://yaml.readthedocs.io/en/latest/example/#output-of-dump-as-a-string
+    """
+
+    def dump(self, data, stream=None, **kw):
+        inefficient = False
+        if stream is None:
+            inefficient = True
+            stream = StringIO()
+        YAML.dump(self, data, stream, **kw)
+        if inefficient:
+            return stream.getvalue()
