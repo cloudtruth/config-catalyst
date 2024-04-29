@@ -74,6 +74,43 @@ Options:
             result.output,
         )
 
+    @mock.patch(
+        "dynamic_importer.main.CTClient",
+    )
+    @pytest.mark.timeout(30)
+    def test_walk_directories_parse_descriptions(self, mock_client):
+        mock_client = mock.MagicMock()  # noqa: F841
+        runner = CliRunner(
+            env={"CLOUDTRUTH_API_HOST": "localhost:8000", "CLOUDTRUTH_API_KEY": "test"}
+        )
+        current_dir = pathlib.Path(__file__).parent.resolve()
+
+        prompt_responses = [
+            "",
+            "myproj",
+            "default",
+        ]
+        result = runner.invoke(
+            import_config,
+            [
+                "walk-directories",
+                "-t",
+                "yaml",
+                "--config-dir",
+                f"{current_dir}/../../samples/advanced",
+                "-c",
+                "-u",
+                "--parse-descriptions",
+            ],
+            input="\n".join(prompt_responses),
+            catch_exceptions=False,
+        )
+        try:
+            assert result.exit_code == 0
+        except AssertionError as e:
+            print(result.output)
+            raise e
+
 
 @pytest.mark.usefixtures("tmp_path")
 def test_create_data_no_api_key(tmp_path):

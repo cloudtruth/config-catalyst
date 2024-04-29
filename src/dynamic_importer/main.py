@@ -70,9 +70,16 @@ def import_config():
     required=False,
 )
 @click.option(
+    "--parse-descriptions",
+    help="Detect comments in the input file and use them for parameter descriptions",
+    is_flag=True,
+)
+@click.option(
     "-p", "--project", help="CloudTruth project to import data into", required=True
 )
-def process_configs(file_type, default_values, env_values, output_dir, project):
+def process_configs(
+    file_type, default_values, env_values, output_dir, parse_descriptions, project
+):
     if not default_values and not env_values:
         raise click.UsageError(
             "At least one of --default-values and --env-values must be provided"
@@ -91,7 +98,9 @@ def process_configs(file_type, default_values, env_values, output_dir, project):
         input_files[env] = file_path
     click.echo(f"Processing {file_type} files from: {', '.join(input_files)}")
     processing_class = get_processor_class(file_type)
-    processor: BaseProcessor = processing_class(input_files)
+    processor: BaseProcessor = processing_class(
+        input_files, should_parse_description=parse_descriptions
+    )
     template, config_data = processor.process()
 
     template_out_file = f"{output_dir}/{project}-{file_type}.cttemplate"
@@ -275,10 +284,17 @@ def _create_data(
     help="If specified, project hierarchy will be created based on directory hierarchy",
     is_flag=True,
 )
+@click.option(
+    "--parse-descriptions",
+    help="Detect comments in the input file and use them for parameter descriptions",
+    is_flag=True,
+)
 @click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
 @click.option("-c", help="Create missing projects and enviroments", is_flag=True)
 @click.option("-u", help="Upsert values", is_flag=True)
-def walk_directories(config_dir, file_types, exclude_dirs, create_hierarchy, k, c, u):
+def walk_directories(
+    config_dir, file_types, exclude_dirs, create_hierarchy, parse_descriptions, k, c, u
+):
     """
     Walks a directory, constructs templates and config data, and uploads to CloudTruth.
     This is an interactive version of the process_configs and create_data commands. The
@@ -315,7 +331,9 @@ def walk_directories(config_dir, file_types, exclude_dirs, create_hierarchy, k, 
 
             click.echo(f"Processing {project} files: {', '.join(env_paths.values())}")
             processing_class = get_processor_class(file_type)
-            processor: BaseProcessor = processing_class(env_paths)
+            processor: BaseProcessor = processing_class(
+                env_paths, should_parse_description=parse_descriptions
+            )
             template, config_data = processor.process()
 
             template_name = f"{project}-{file_type}.cttemplate"

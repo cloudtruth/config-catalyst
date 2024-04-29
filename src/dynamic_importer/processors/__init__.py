@@ -48,13 +48,16 @@ def get_supported_formats() -> List[str]:
 
 class BaseProcessor:
     default_values = None
-    parameters_and_values: Dict = {}
     parameters = None
+    parameters_and_values: Dict = {}
     raw_data: Dict = {}
-    values = None
+    should_parse_description = False
     template: Dict = {}
+    values = None
 
-    def __init__(self, env_values: Dict) -> None:
+    def __init__(
+        self, env_values: Dict, should_parse_description: bool = False
+    ) -> None:
         raise NotImplementedError("Subclasses must implement the __init__ method")
 
     def is_param_secret(self, param_name: str) -> bool:
@@ -111,6 +114,9 @@ class BaseProcessor:
         hints = hints or self.parameters_and_values
         return self.encode_template_references(self.template, hints)
 
+    def _parse_description(self, obj: Union[List, Dict], value: Any) -> Optional[str]:
+        return None
+
     def _traverse_data(
         self,
         path: str,
@@ -126,18 +132,26 @@ class BaseProcessor:
         params_and_values = {}
         if isinstance(obj, list):
             for i, subnode in enumerate(obj):
+                sub_path = path + f"[{i}]"
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{i}]", subnode, env, hints=hints
+                    sub_path, subnode, env, hints=hints
                 )
                 obj[i] = template_value
+
+                if sub_path in ct_data and self.should_parse_description:
+                    ct_data[sub_path]["description"] = self._parse_description(obj, i)
                 params_and_values.update(ct_data)
             return obj, params_and_values
         elif isinstance(obj, dict):
             for k, v in obj.items():
+                sub_path = path + f"[{k}]"
                 template_value, ct_data = self._traverse_data(
-                    path + f"[{k}]", v, env, hints=hints
+                    sub_path, v, env, hints=hints
                 )
                 obj[k] = template_value
+
+                if sub_path in ct_data and self.should_parse_description:
+                    ct_data[sub_path]["description"] = self._parse_description(obj, k)
                 params_and_values.update(ct_data)
             return obj, params_and_values
         else:

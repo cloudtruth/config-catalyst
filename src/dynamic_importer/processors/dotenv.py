@@ -16,7 +16,10 @@ from dynamic_importer.processors import BaseProcessor
 
 
 class DotEnvProcessor(BaseProcessor):
-    def __init__(self, env_values: Dict) -> None:
+    def __init__(
+        self, env_values: Dict, should_parse_description: bool = False
+    ) -> None:
+        self.should_parse_description = should_parse_description
         # Due to an unknown bug, self.parameters_and_values can persist between
         # Processor instances. Therefore, we reset it here.
         self.parameters_and_values: Dict = {}
