@@ -25,7 +25,7 @@ This utility is distributed as a Docker container and can be pulled from cloudtr
 You can feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats. If you supply your CLOUDTRUTH_API_KEY via docker, the data will be uploaded to your CloudTruth account.
 
 ```
-docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/dynamic-importer walk-directories --config-dir /app/samples/ -t dotenv -t json -t tf
+docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/dynamic-importer walk-directories --config-dirs /app/samples/ -t dotenv -t json -t tf
 ```
 
 ## Processing a single file
