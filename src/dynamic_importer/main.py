@@ -262,9 +262,10 @@ def _create_data(
 
 @import_config.command()
 @click.option(
-    "--config-dir",
+    "--config-dirs",
     help="Full path to directory to walk and locate configs",
     required=True,
+    multiple=True,
 )
 @click.option(
     "-t",
@@ -293,7 +294,7 @@ def _create_data(
 @click.option("-c", help="Create missing projects and enviroments", is_flag=True)
 @click.option("-u", help="Upsert values", is_flag=True)
 def walk_directories(
-    config_dir, file_types, exclude_dirs, create_hierarchy, parse_descriptions, k, c, u
+    config_dirs, file_types, exclude_dirs, create_hierarchy, parse_descriptions, k, c, u
 ):
     """
     Walks a directory, constructs templates and config data, and uploads to CloudTruth.
@@ -301,22 +302,25 @@ def walk_directories(
     user will be prompted for project and environment names as files are walked.
     """
     walked_files = {}
-    for root, dirs, files in os.walk(config_dir):
-        root = root.rstrip("/")
+    for config_dir in config_dirs:
+        for root, dirs, files in os.walk(config_dir):
+            root = root.rstrip("/")
 
-        # skip over known non-config directories
-        for dir in DIRS_TO_IGNORE:
-            if dir in dirs:
-                dirs.remove(dir)
+            # skip over known non-config directories
+            for dir in DIRS_TO_IGNORE:
+                if dir in dirs:
+                    dirs.remove(dir)
 
-        # skip over user-specified non-config directories
-        for dir in exclude_dirs:
-            dir = dir.rstrip("/")
-            if os.path.abspath(dir) in [f"{os.path.abspath(root)}/{d}" for d in dirs]:
-                click.echo(f"Excluding directory: {os.path.abspath(dir)}")
-                dirs.remove(os.path.basename(dir))
+            # skip over user-specified non-config directories
+            for dir in exclude_dirs:
+                dir = dir.rstrip("/")
+                if os.path.abspath(dir) in [
+                    f"{os.path.abspath(root)}/{d}" for d in dirs
+                ]:
+                    click.echo(f"Excluding directory: {os.path.abspath(dir)}")
+                    dirs.remove(os.path.basename(dir))
 
-        walked_files.update(walk_files(root, files, file_types, create_hierarchy))
+            walked_files.update(walk_files(root, files, file_types, create_hierarchy))
 
     project_files = defaultdict(lambda: defaultdict(list))
     for v in walked_files.values():

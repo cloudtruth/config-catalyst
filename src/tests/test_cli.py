@@ -96,7 +96,7 @@ Options:
                 "walk-directories",
                 "-t",
                 "yaml",
-                "--config-dir",
+                "--config-dirs",
                 f"{current_dir}/../../samples/advanced",
                 "-c",
                 "-u",
