@@ -120,7 +120,7 @@ def test_create_data_no_api_key(tmp_path):
             NamedTemporaryFile(dir=td, delete=False) as tmp_data,
             NamedTemporaryFile(dir=td, delete=False) as tmp_template,
         ):
-            tmp_data.write(b"{}")
+            tmp_data.write(b'{"nullproj": {}}')
             tmp_data.close()
             tmp_template.write(b"{}")
             tmp_template.close()
@@ -133,12 +133,10 @@ def test_create_data_no_api_key(tmp_path):
                     f"{tmp_data.name}",
                     "-m",
                     f"{tmp_template.name}",
-                    "-p",
-                    "testproj",
                 ],
                 catch_exceptions=False,
             )
-            assert result.exit_code == 2
+            assert result.exit_code == 2, result.output
             assert (
                 "Error: CLOUDTRUTH_API_KEY environment variable is required."
                 in result.output
@@ -315,8 +313,6 @@ def test_cli_import_data_json(mock_get, mock_post, tmp_path):
                 f"{td}/testproj-json.ctconfig",
                 "-m",
                 f"{td}/testproj-json.cttemplate",
-                "-p",
-                "testproj",
             ],
             catch_exceptions=False,
         )
