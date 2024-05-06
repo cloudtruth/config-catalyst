@@ -113,7 +113,7 @@ def process_configs(
 
     click.echo(f"Writing config data to: {config_out_file}")
     with open(config_out_file, "w+") as fp:
-        json.dump(config_data, fp, indent=4)
+        json.dump({project: config_data}, fp, indent=4)
 
 
 @import_config.command()
@@ -160,13 +160,14 @@ def regenerate_template(default_values, env_values, file_type, data_file):
         input_files[env] = file_path
     click.echo(f"Processing {file_type} files from: {', '.join(input_files)}")
 
-    config_data = {}
+    project_config_data = {}
     with open(data_file, "r") as fp:
-        config_data = json.load(fp)
+        project_config_data = json.load(fp)
 
-    processing_class = get_processor_class(file_type)
-    processor: BaseProcessor = processing_class(input_files)
-    template, _ = processor.process(hints=config_data)
+    for _, config_data in project_config_data.items():
+        processing_class = get_processor_class(file_type)
+        processor: BaseProcessor = processing_class(input_files)
+        template, _ = processor.process(hints=config_data)
 
     input_filename = ".".join(
         list(input_files.values())[0].split("/")[-1].split(".")[:-1]
@@ -191,17 +192,15 @@ def regenerate_template(default_values, env_values, file_type, data_file):
     help="Full path to template file generated from process_configs command",
     required=True,
 )
-@click.option(
-    "-p", "--project", help="CloudTruth project to import data into", required=True
-)
 @click.option("-k", help="Ignore SSL certificate verification", is_flag=True)
 @click.option("-c", help="Create missing projects and enviroments", is_flag=True)
 @click.option("-u", help="Upsert values", is_flag=True)
-def create_data(data_file, template_file, project, k, c, u):
+def create_data(data_file, template_file, k, c, u):
     with open(data_file, "r") as dfp, open(template_file, "r") as tfp:
-        config_data = json.load(dfp)
+        project_config_data = json.load(dfp)
         template_data = tfp.read()
-    _create_data(config_data, str(template_file), template_data, project, k, c, u)
+    for project, config_data in project_config_data.items():
+        _create_data(config_data, str(template_file), template_data, project, k, c, u)
 
     click.echo("Data upload to CloudTruth complete!")
 
