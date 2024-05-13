@@ -1,10 +1,10 @@
-# dynamic-importer
+# CloudTruth Config Catalyst
 Extract parameters from your existing config and import to your CloudTruth organization
 
-![CI](https://github.com/cloudtruth/dynamic-importer/actions/workflows/ci.yaml/badge.svg)
-![Codecov](https://img.shields.io/codecov/c/github/cloudtruth/dynamic-importer)
-![Docker pulls](https://img.shields.io/docker/pulls/cloudtruth/dynamic-importer)
-![version](https://img.shields.io/docker/v/cloudtruth/dynamic-importer)
+![CI](https://github.com/cloudtruth/config-catalyst/actions/workflows/ci.yaml/badge.svg)
+![Codecov](https://img.shields.io/codecov/c/github/cloudtruth/config-catalyst)
+![Docker pulls](https://img.shields.io/docker/pulls/cloudtruth/config-catalyst)
+![version](https://img.shields.io/docker/v/cloudtruth/config-catalyst)
 
 
 # Supported file types
@@ -19,19 +19,19 @@ Extract parameters from your existing config and import to your CloudTruth organ
 * pkl
 
 # Usage
-This utility is distributed as a Docker container and can be pulled from cloudtruth/dynamic-importer on Docker Hub
+This utility is distributed as a Docker container and can be pulled from cloudtruth/config-catalyst on Docker Hub
 
 ## Procesing a directory tree (the easy method)
 You can feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats. If you supply your CLOUDTRUTH_API_KEY via docker, the data will be uploaded to your CloudTruth account.
 
 ```
-docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/dynamic-importer walk-directories --config-dirs /app/samples/ -t dotenv -t json -t tf
+docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/config-catalyst walk-directories --config-dirs /app/samples/ -t dotenv -t json -t tf
 ```
 
 ## Processing a single file
 An example of how to process a .env file
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs -p myproj --default-values /app/samples/.env.sample --file-type dotenv --output-dir /app/files/
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst process-configs -p myproj --default-values /app/samples/.env.sample --file-type dotenv --output-dir /app/files/
 ```
 
 This command will mount a subdir `files` from the current working directory to the container. Assuming your input file is in that dir, the processed files will be placed in that dir once processing has completed.
@@ -39,7 +39,7 @@ This command will mount a subdir `files` from the current working directory to t
 ## Processing several files
 An example of how to orocess several .env files and create values for each environment
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-configs \
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst process-configs \
     -p myproj -t dotenv \
     --default-values /app/samples/dotenvs/.env.default.sample \
     --env-values development:/app/samples/dotenvs/.env.dev.sample \
@@ -52,14 +52,14 @@ docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer process-c
 There may be times when this utility is too aggressive or you want a variable to remain hard-coded in your CloudTruth template. In that case, you can remove the references from the generated `.ctconfig` file and re-generate the template.
 
 ```
-docker run --rm -v ${PWD}/files:/app/files cloudtruth/dynamic-importer regenerate-template --input-file /app/samples/.env.sample --file-type dotenv --data-file /app/files/.env.ctconfig --output-dir /app/files/
+docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst regenerate-template --input-file /app/samples/.env.sample --file-type dotenv --data-file /app/files/.env.ctconfig --output-dir /app/files/
 ```
 
 ## Uploading data to CloudTruth
 Once you are comfortable with your template and associated data, you're ready to upload to CloudTruth! Be sure to provide your CloudTruth API Key as an environment variable
 
 ```
-docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/dynamic-importer create-data --data-file /app/files/.env.ctconfig -m /app/files/.env.cttemplate -p "Meaningful Project Name"
+docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/config-catalyst create-data --data-file /app/files/.env.ctconfig -m /app/files/.env.cttemplate -p "Meaningful Project Name"
 ```
 
 # Development
@@ -74,7 +74,7 @@ To run unittests, run `pytest` from within your virtualenv.
 Pre-commit is installed in this repo and should be used to verify code organization and formatting. To set it up, run `pre-commit install` in your virtualenv
 
 # Contributing
-Issues, pull requests, and discussions are welcomed. Please vote for any issues tagged with [needs votes](https://github.com/cloudtruth/dynamic-importer/issues?q=is%3Aissue+is%3Aopen+label%3A%22needs+votes%22)
+Issues, pull requests, and discussions are welcomed. Please vote for any issues tagged with [needs votes](https://github.com/cloudtruth/config-catalyst/issues?q=is%3Aissue+is%3Aopen+label%3A%22needs+votes%22)
 
 See `dynamic_importer.processors` and the subclasses within for examples of the current design. TL;DR - if you can convert the source into a dict, `BaseProcessor._traverse_data` should handle most of the heavy lifting.
 
