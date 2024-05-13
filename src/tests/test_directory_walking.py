@@ -29,7 +29,7 @@ If you run into this issue, you can simulate the GitHub Actions environment
 by running the docker container and executing the tests there.
 
 ```shell
-docker run -it --entrypoint /bin/bash --rm -v $PWD:/app cloudtruth/dynamic-importer:latest
+docker run -it --entrypoint /bin/bash --rm -v $PWD:/app cloudtruth/config-catalyst:latest
 pip install -e .[dev]
 IS_GITHUB_ACTION=true pytest
 ```
