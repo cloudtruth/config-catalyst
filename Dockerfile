@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY . /app
-RUN pip install -e .
+RUN pip install .
+RUN rm -rf /app/
 
 ENTRYPOINT [ "cloudtruth-dynamic-importer" ]
