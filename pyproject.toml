@@ -39,7 +39,3 @@ ignore_missing_imports = "true"
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib", "--cov=dynamic_importer", "--cov-report=term-missing", "--cov-report=xml", "--mypy"]
 minversion = 6.0
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["dynamic_importer", "tests"]
