@@ -25,9 +25,10 @@ This utility is distributed as a Docker container and can be pulled from cloudtr
 You can feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats. If you supply your CLOUDTRUTH_API_KEY via docker, the data will be uploaded to your CloudTruth account.
 
 ```
-docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/config-catalyst walk-directories --config-dirs /app/samples/ -t dotenv -t json -t tf
+docker run --rm -it -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/config-catalyst walk-directories --config-dirs /app/samples/ -t dotenv -t json -t tf
 ```
 
+# Advanced Usage
 ## Processing a single file
 An example of how to process a .env file
 ```
@@ -37,7 +38,7 @@ docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst process-co
 This command will mount a subdir `files` from the current working directory to the container. Assuming your input file is in that dir, the processed files will be placed in that dir once processing has completed.
 
 ## Processing several files
-An example of how to orocess several .env files and create values for each environment
+An example of how to process several .env files and create values for each environment
 ```
 docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst process-configs \
     -p myproj -t dotenv \
