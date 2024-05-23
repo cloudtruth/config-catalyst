@@ -59,7 +59,7 @@ You can feed a directory of files into the `walk-directories` command, which wil
 docker run --rm -it -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/config-catalyst walk-directories --config-dirs /app/samples/ -t dotenv -t json -t tf
 ```
 
-# Processing a single file
+## Processing a single file
 An example of how to process a .env file. This example assumes you have one .env file in the current directory that will be mounted through to the container
 
 ```
