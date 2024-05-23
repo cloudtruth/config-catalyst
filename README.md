@@ -9,7 +9,7 @@
 
 Config Catalyst automatically converts static config files in your repos into parameterized templates.
 It's the easiest way to "pay down config tech debt" with a single command.
-We ❤️ feedback, [bugs](https://github.com/cloudtruth/config-catalyst/issues/new), and [enhancement suggestions](https://github.com/cloudtruth/config-catalyst/issues/new). We also have a #config-catalyst channel [on our Discord](https://discord.com/invite/eBZXm9Tzr7).
+We :heart: feedback, [bugs](https://github.com/cloudtruth/config-catalyst/issues/new), and [enhancement suggestions](https://github.com/cloudtruth/config-catalyst/issues/new). We also have a #config-catalyst channel [on our Discord](https://discord.com/invite/eBZXm9Tzr7).
 
 # Motivation
 Config Catalyst exists to solve this problem:
