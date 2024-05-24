@@ -9,10 +9,14 @@
 
 Config Catalyst automatically converts static config files in your repos into parameterized templates.
 It's the easiest way to "pay down config tech debt" with a single command.
-We :heart: feedback, [bugs](https://github.com/cloudtruth/config-catalyst/issues/new), and [enhancement suggestions](https://github.com/cloudtruth/config-catalyst/issues/new). We also have a #config-catalyst channel [on our Discord](https://discord.com/invite/eBZXm9Tzr7).
+
+We :heart: feedback, [bugs](https://github.com/cloudtruth/config-catalyst/issues/new), and [enhancement suggestions](https://github.com/cloudtruth/config-catalyst/issues/new). 
+
+We also have a #config-catalyst channel [on our Discord](https://discord.com/invite/eBZXm9Tzr7).
 
 # Motivation
 Config Catalyst exists to solve this problem:
+
 "I need to take this weird network config that Bob (who left five years ago) roughed out by hand and turn it into a crisp little YAML template with parameterized variables."
 Static, hard-coded config is a form of "tech debt" many teams want to eliminate, but the "pay it down" process is tedious and time consuming.
 
@@ -26,7 +30,7 @@ You don't need to build all the plumbing anymore. Config file changes are indepe
 
 Need to manage values across multiple environments with one template? No problem!
 
-Bonus: Optionally, the variables and secrets can be synced to Azure Key Vault, AWS Secrets Manager, ParameterStore, or Vault.
+Bonus: The variables and secrets can optionally be synced to Azure Key Vault, AWS Secrets Manager, ParameterStore, or Vault.
 
 # Features and supported file types
 
@@ -46,13 +50,13 @@ This utility is distributed as a Docker container and can be pulled from cloudtr
 
 Clone your repo(s) to local disk to allow Config Catalyst to find the supported file types.
 
-You will need a CloudTruth [API token](https://app.cloudtruth.io/organization/api) to complete the process.
+To complete the process, you will need a CloudTruth [API token](https://app.cloudtruth.io/organization/api).
 
-Use your existing account or create a free [CloudTruth account](https://app.cloudtruth.io/signup) to get an API token.
+To get an API token, use your existing account or create a free [CloudTruth account](https://app.cloudtruth.io/signup).
 
 # Usage
 
-## Procesing a directory tree (the easy method)
+## Processing a directory tree (the easy method)
 You can feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats. If you supply your CLOUDTRUTH_API_KEY via docker, the data will be uploaded to your CloudTruth account.
 
 ```
@@ -82,7 +86,7 @@ docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst process-co
 ```
 
 ## Editing template references
-There may be times when this utility is too aggressive or you want a variable to remain hard-coded in your CloudTruth template. In that case, you can remove the references from the generated `.ctconfig` file and re-generate the template.
+Sometimes this utility is too aggressive or you want a variable to remain hard-coded in your CloudTruth template. In that case, you can remove the references from the generated `.ctconfig` file and re-generate the template.
 
 ```
 docker run --rm -v ${PWD}/files:/app/files cloudtruth/config-catalyst regenerate-template --input-file /app/samples/.env.sample --file-type dotenv --data-file /app/files/.env.ctconfig --output-dir /app/files/
