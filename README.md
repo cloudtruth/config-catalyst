@@ -10,7 +10,7 @@
 Config Catalyst automatically converts static config files in your repos into parameterized templates.
 It's the easiest way to "pay down config tech debt" with a single command.
 
-We :heart: feedback, [bugs](https://github.com/cloudtruth/config-catalyst/issues/new), and [enhancement suggestions](https://github.com/cloudtruth/config-catalyst/issues/new). 
+We :heart: feedback, [bugs](https://github.com/cloudtruth/config-catalyst/issues/new), and [enhancement suggestions](https://github.com/cloudtruth/config-catalyst/issues/new).
 
 We also have a #config-catalyst channel [on our Discord](https://discord.com/invite/eBZXm9Tzr7).
 
@@ -19,7 +19,7 @@ Config Catalyst exists to solve this problem:
 
 >"I need to take this weird network config that Bob (who left five years ago) roughed out by hand and turn it into a crisp little YAML template with parameterized variables."
 
-Static, hard-coded config is a form of "tech debt" many teams want to eliminate, but the "pay it down" process is tedious and time-consuming. Until now. 
+Static, hard-coded config is a form of "tech debt" many teams want to eliminate, but the "pay it down" process is tedious and time-consuming. Until now.
 
 # How it works
 Config Catalyst works off of a local copy of your repo folder structure.
