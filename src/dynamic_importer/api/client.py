@@ -305,7 +305,6 @@ class CTClient:
             environment_id = self.create_environment(environment_name)["id"]
             parameter_id = self.create_parameter(project_name, parameter_name)["id"]
 
-        value = str(value) if isinstance(value, bool) else value
         resp = self._make_request(
             f"projects/{project_id}/parameters/{parameter_id}/values",
             "POST",
@@ -329,7 +328,7 @@ class CTClient:
         environment_id = self.get_environment_id(environment_name)
         parameter_id = self.get_parameter_id(project_name, parameter_name)
 
-        value = str(value) if isinstance(value, bool) else value
+        value = str(value).lower() if isinstance(value, bool) else value
         return self._make_request(
             f"projects/{project_id}/parameters/{parameter_id}/values/{value_id}",
             "PATCH",

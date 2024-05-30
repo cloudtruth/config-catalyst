@@ -158,9 +158,10 @@ class BaseProcessor:
             if not hints:
                 obj_type = self.guess_type(obj)
                 param_name = self.path_to_param_name(path)
+                value = str(obj).lower() if obj_type == "boolean" else obj
                 return f"{{{{ cloudtruth.parameters.{param_name} }}}}", {
                     path: {
-                        "values": {env: obj},
+                        "values": {env: value},
                         "param_name": param_name,
                         "type": obj_type,
                         "secret": self.is_param_secret(param_name),

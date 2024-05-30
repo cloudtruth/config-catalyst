@@ -42,8 +42,13 @@ class TFVarsProcessor(BaseProcessor):
         environment = "default"
         if config_data:
             for _, data in config_data.items():
-                value = str(data["values"][environment])
-                reference = rf'{{{{ cloudtruth.parameters.{data["param_name"]} }}}}'
+                source_name = sub(r"_\d+", "", data["param_name"])
+                value = (
+                    rf"({source_name})(\s*=\s*.*){str(data['values'][environment])}(.*)"
+                )
+                reference = (
+                    rf'\1\2{{{{ cloudtruth.parameters.{data["param_name"]} }}}}\3'
+                )
                 template_body = sub(value, reference, template_body)
 
         return template_body
