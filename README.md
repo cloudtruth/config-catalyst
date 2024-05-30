@@ -55,9 +55,8 @@ To complete the process, you will need a CloudTruth [API token](https://app.clou
 
 To get an API token, use your existing account or create a free [CloudTruth account](https://app.cloudtruth.io/signup).
 
-# Usage
 
-## Processing a directory tree (the easy method)
+## Processing a directory tree (the easy method for fully automatic mode)
 You can feed a directory of files into the `walk-directories` command, which will find all files matching the supplied types and parse them into CloudTruth config formats. If you supply your CLOUDTRUTH_API_KEY via docker, the data will be uploaded to your CloudTruth account.
 
 ```
@@ -100,6 +99,62 @@ Once you are comfortable with your template and associated data, you're ready to
 docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/app/files cloudtruth/config-catalyst create-data --data-file /app/files/.env.ctconfig -m /app/files/.env.cttemplate -p "Meaningful Project Name"
 ```
 
+# Command help
+
+**Automatic mode processes a directory tree and creates parameters, values and templates.**
+```
+walk-directories --help
+```
+Options:
+
+**Manual mode step 1 - Find and convert**
+```
+process-configs --help
+```
+Options:
+
+-t, --file-type - Type of file to process. Must be one of: 'dotenv', 'json', 'tf', 'tfvars', 'yaml'
+
+--default-values - Full path to a file containing default values for the config data
+
+--env-values - Full path to a file containing environment specific values for the config data. Should be in the format of `env:file_path`
+
+-o, --output-dir - Directory to write processed output to. Default is current directory
+
+--parse-descriptions - Detect comments in the input file and use them for parameter descriptions
+
+-p, --project - CloudTruth project to import data into
+
+**Manual mode step 2 - Upload**
+```
+create-data --help
+```
+Options:
+
+-d, --data-file Full path to config data file generated from process_configs command
+
+-m, --template-file Full path to template file generated from process_configs command
+
+-k Ignore SSL certificate verification
+
+-c Create missing projects and environments
+
+-u Upsert values
+
+**Manual mode step 3 - Edit template prior to upload**
+```
+regenerate-template --help
+```
+Options:
+
+--default-values - Full path to a file containing default values for the config data
+
+--env-values - Full path to a file containing environment specific values for the config data. Should be in the format of `env:file_path`
+
+-t, --file-type - Type of file to process. Must be one of: 'dotenv','json', 'tf', 'tfvars', 'yaml'
+
+-d, --data-file - Full path to config data file generated from process_configs command
+
 # Development
 1. Set up a virtualenv
 1. From your checkout of the code, `pip install -e .[dev]`
@@ -110,6 +165,9 @@ Test code lives in `src/tests` and uses [click.testing](https://click.palletspro
 To run unittests, run `pytest` from within your virtualenv.
 
 Pre-commit is installed in this repo and should be used to verify code organization and formatting. To set it up, run `pre-commit install` in your virtualenv
+
+# Known issues
+1. On Mac OSX the "{PWD}" in the "docker run -v ${PWD}/files:/app/files" command argument may not be reliable. Replace "{PWD}" with a fully qualified path.
 
 # Contributing
 Issues, pull requests, and discussions are welcomed. Please vote for any issues tagged with [needs votes](https://github.com/cloudtruth/config-catalyst/issues?q=is%3Aissue+is%3Aopen+label%3A%22needs+votes%22)
