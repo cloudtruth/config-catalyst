@@ -101,11 +101,30 @@ docker run --rm -e CLOUDTRUTH_API_KEY="myverysecureS3CR3T!!" -v ${PWD}/files:/ap
 
 # Command help
 
-**Automatic mode processes a directory tree and creates parameters, values and templates.**
+**Automatic mode processes a directory tree and creates parameters, values, and templates.**
 ```
 walk-directories --help
 ```
+
+This command walks a directory, constructs templates and config data, and uploads to CloudTruth. It is an interactive version of the process_configs and create_data commands. As files are walked, the user will be prompted for project and environment names.
+
 Options:
+
+--config-dirs - Full path to the directory to walk and locate configs
+
+-t, --file-types - Type of file to process. Must be one of 'dotenv', 'json', 'tf', 'tfvars', 'yaml'
+  
+--exclude-dirs - Directory to exclude from walking. Can be specified multiple times
+
+--create-hierarchy - If specified, project hierarchy will be created based on the directory hierarchy
+
+--parse-descriptions - Detect comments in the input file and use them for parameter descriptions
+
+-k - Ignore SSL certificate verification
+
+-c - Create missing projects and environments
+
+-u - Upsert values
 
 **Manual mode step 1 - Find and convert**
 ```
